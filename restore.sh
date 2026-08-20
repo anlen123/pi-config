@@ -56,6 +56,21 @@ restore_mcp config-mcp.json     "$HOME/.config/mcp/mcp.json"
 restore_mcp agents-mcp.json     "$HOME/.agents/mcp.json"
 restore_mcp agents-mcp-mcp.json "$HOME/.agents/mcp/mcp.json"
 
+# 可选：若设置了 AMAP_MCP_KEY 环境变量，把 mcp.json 中的占位符替换为真实 key
+if [ -n "${AMAP_MCP_KEY:-}" ] && [ -f "$PI_AGENT_DIR/mcp.json" ]; then
+  python3 - "$PI_AGENT_DIR/mcp.json" "$AMAP_MCP_KEY" <<'PY'
+import sys
+p, key = sys.argv[1], sys.argv[2]
+s = open(p, encoding="utf-8").read()
+s = s.replace("{env:AMAP_MCP_KEY}", key)
+open(p, "w", encoding="utf-8").write(s)
+PY
+  echo "  已注入 AMAP_MCP_KEY 到 mcp.json（amap 高德地图）"
+else
+  echo "  提示: 未设置 AMAP_MCP_KEY，mcp.json 保留 {env:AMAP_MCP_KEY} 占位符；"
+  echo "        设置环境变量后运行时自动展开，或手动替换为真实 key。"
+fi
+
 # ── 5. npm 包重装（需联网）──────────────────────────────────────────────────
 if [ -f "$PI_AGENT_DIR/npm/package.json" ]; then
   echo "==> 尝试重装 npm packages（需联网，包清单: $(grep -c ':' "$PI_AGENT_DIR/npm/package.json" || true) 项依赖）..."

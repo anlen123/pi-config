@@ -197,6 +197,9 @@ if (Test-Path "$env:USERPROFILE\pi-config\mcp\agent-mcp.json") {
 
 ### ✅ 步骤 6 验证
 
+- 仓库里有 `mcp/agent-mcp.json`（高德地图 amap 配置，key 为 `{env:AMAP_MCP_KEY}` 占位符）：
+  还原后确认 `PI_AGENT/mcp.json` 存在且为合法 JSON。
+- `mcp.json` 中的占位符 `{env:AMAP_MCP_KEY}` 无需手工替换：设置好环境变量后，pi 运行时自动展开（步骤 7 处理）。
 - 仓库里没有 `mcp/` 文件时：跳过并在报告中注明「当前无 MCP 服务器配置」。
 
 ---
@@ -228,9 +231,33 @@ Copy-Item "$KEY_SRC" "$env:USERPROFILE\.pi\agent\auth.json"
 ```
 **AI 不得代替用户猜测密钥**；用户填写完成后，AI 再验证。
 
+### 7.2 高德 MCP key（`AMAP_MCP_KEY`）— 同样需要用户参与 ⚠️
+
+`mcp/agent-mcp.json` 中的 URL 含占位符 `{env:AMAP_MCP_KEY}`（仓库 public，未存明文 key）。询问用户，二选一：
+
+**选项 A：设置环境变量（推荐，免改文件）**
+
+```bash
+# Linux：写入 ~/.bashrc 或 ~/.zshrc 后 source
+export AMAP_MCP_KEY="你的高德Web服务key"
+```
+```powershell
+# Windows（PowerShell）
+setx AMAP_MCP_KEY "你的高德Web服务key"
+```
+pi 运行时（pi-mcp-adapter）会自动把 `{env:AMAP_MCP_KEY}` 展开为环境变量值。**AI 不得把 key 输出到日志/报告**。
+
+**选项 B：直接替换文件**（用户手动编辑，或用户提供 key 后由 AI 用安全方式写入）：
+
+把 `PI_AGENT/mcp.json`（即还原后的 `mcp/agent-mcp.json`）中的 `{env:AMAP_MCP_KEY}` 替换为真实 key，得到：
+```json
+"url": "https://mcp.amap.com/mcp?key=你的真实key"
+```
+
 ### ✅ 步骤 7 验证
 
 - `auth.json` 存在且是合法 JSON，包含 `deepseek` 字段（或用户明确表示暂不配置密钥，此时在报告中注明，pi 仍可启动，只是默认 provider 不可用）。
+- MCP：`AMAP_MCP_KEY` 已设置（`echo ${AMAP_MCP_KEY:+set}` 输出 `set`），或 `mcp.json` 中已无 `{env:AMAP_MCP_KEY}` 占位符。若用户暂不提供 key：保留占位符并在报告中注明（amap 工具不可用，其余功能正常）。
 
 ---
 
@@ -271,6 +298,7 @@ find "$HOME/.pi/agent/skills" -maxdepth 1 -type d | wc -l   # 应 >= 26
 ls "$HOME/.pi/agent/extensions/"                              # 3 个 ts 文件
 cat "$HOME/.pi/agent/settings.json" | python3 -m json.tool >/dev/null && echo "settings.json 合法 JSON"
 [ -f "$HOME/.pi/agent/auth.json" ] && echo "auth.json 存在" || echo "⚠ auth.json 缺失（用户未提供密钥）"
+[ -f "$HOME/.pi/agent/mcp.json" ] && cat "$HOME/.pi/agent/mcp.json" | python3 -m json.tool >/dev/null && echo "mcp.json 存在且合法"
 pi --version
 ```
 ```powershell
@@ -290,7 +318,7 @@ pi --version
 - 核心配置：✅ / ❌ <具体缺失项>
 - extensions：✅ 3 个
 - skills：✅ N 个目录
-- MCP 配置：✅ N 个 / ⚠ 无
+- MCP 配置：✅ amap 已还原（key: 环境变量 AMAP_MCP_KEY 已设置 / 已替换 / ⚠ 占位符未填）
 - auth.json：✅ / ⚠ 未配置（用户需自行补密钥）
 - npm packages：✅ 已安装 N 个 / ⚠ 需 pi 首次启动自动安装
 - 旧配置备份位置：<.bak-* 路径>

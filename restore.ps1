@@ -57,6 +57,18 @@ Restore-Mcp "config-mcp.json"     (Join-Path $env:USERPROFILE ".config\mcp\mcp.j
 Restore-Mcp "agents-mcp.json"     (Join-Path $env:USERPROFILE ".agents\mcp.json")
 Restore-Mcp "agents-mcp-mcp.json" (Join-Path $env:USERPROFILE ".agents\mcp\mcp.json")
 
+# 可选：若设置了 AMAP_MCP_KEY 环境变量，把 mcp.json 中的占位符替换为真实 key
+$envKey = $env:AMAP_MCP_KEY
+$mcpFile = Join-Path $AgentDir "mcp.json"
+if ($envKey -and (Test-Path $mcpFile)) {
+    $content = (Get-Content $mcpFile -Raw).Replace("{env:AMAP_MCP_KEY}", $envKey)
+    Set-Content $mcpFile $content -NoNewline -Encoding UTF8
+    Write-Host "  已注入 AMAP_MCP_KEY 到 mcp.json（amap 高德地图）"
+} else {
+    Write-Host "  提示: 未设置 AMAP_MCP_KEY，mcp.json 保留 {env:AMAP_MCP_KEY} 占位符；" -ForegroundColor Yellow
+    Write-Host "        设置环境变量后运行时自动展开，或手动替换为真实 key。" -ForegroundColor Yellow
+}
+
 # ── 5. npm 包重装（需联网）──────────────────────────────────────────────────
 $pkgJson = Join-Path $AgentDir "npm\package.json"
 if (Test-Path $pkgJson) {

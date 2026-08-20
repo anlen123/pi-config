@@ -29,7 +29,9 @@ pi（或任意带终端工具的 AI）会按 [AI-RESTORE.md](AI-RESTORE.md) 自�
 │   ├── git/                # git 方式安装的包（pi-ocr-tool）
 │   ├── fff/                # 文件访问频率索引
 │   └── bin/                # fd/rg 二进制（Linux-x86_64，其他平台还原时自动清理）
+│   │                       # 高德地图 MCP（key 脱敏，见下方说明）
 ├── mcp/                    # MCP 服务器配置（按原路径还原）
+│   └── agent-mcp.json      # → ~/.pi/agent/mcp.json（amap 高德地图）
 ├── AI-RESTORE.md           # ⭐ AI 执行清单（还原时优先让 AI 读这个）
 ├── restore.sh              # Linux/macOS 还原脚本（人工/脚本方式）
 ├── restore.ps1             # Windows 还原脚本
@@ -71,6 +73,24 @@ API 密钥）**未上传**。还原后需要手动补上，二选一：
 
 对话历史含隐私内容，未上传。完整离线备份请使用本地 ZIP
 （见下方「本地完整备份」），新电脑上还原后再把 sessions/ 拷入即可。
+
+### 高德 MCP 的 API key 不在仓库中
+
+`mcp/agent-mcp.json` 里的高德地图 MCP 配置，URL 内嵌的 API key 已脱敏为
+`{env:AMAP_MCP_KEY}` 占位符（仓库 public，明文提交会泄露 key）。还原后二选一：
+
+- **方式 A（推荐，免改文件）**：设置环境变量即可，pi 运行时自动展开：
+  ```bash
+  # Linux/macOS（写入 ~/.bashrc 或 ~/.zshrc 持久化）
+  export AMAP_MCP_KEY="你的高德Web服务key"
+  # Windows（PowerShell）
+  setx AMAP_MCP_KEY "你的高德Web服务key"
+  ```
+- **方式 B**：直接把 `~/.pi/agent/mcp.json` 中的 `{env:AMAP_MCP_KEY}` 替换为真实 key。
+
+> 也可用 restore 脚本还原：设置好 `AMAP_MCP_KEY` 环境变量后再执行 restore.sh / restore.ps1，
+> 脚本会自动把占位符替换为真实 key 写入目标文件。
+> 原电脑上的真实配置在 `~/.pi/agent/mcp.json`（含 key，勿提交到仓库）。
 
 ### 更新备份
 

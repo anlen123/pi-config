@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "amap": {
+      "url": "https://mcp.amap.com/mcp?key={env:AMAP_MCP_KEY}",
+      "lifecycle": "lazy",
+      "requestTimeoutMs": 30000
+    }
+  }
+}

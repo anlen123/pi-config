@@ -3,5 +3,5 @@ Pi 配置备份
 备份时间 : 2026-08-20 12:08:24
 源平台   : Linux x86_64 (5.15.167.4-microsoft-standard-WSL2)
 pi 版本  : 0.84.2
-MCP 配置 : 0 个文件
+MCP 配置 : 1 个文件（mcp/agent-mcp.json，高德 amap，key 已脱敏为 {env:AMAP_MCP_KEY} 占位符）
 node_modules : 未包含(还原时联网重装)
