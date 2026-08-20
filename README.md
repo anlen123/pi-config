@@ -3,6 +3,18 @@
 [pi](https://github.com/badlogic/pi-mono/) 编码助手的便携配置备份仓库。
 包含全局设置、插件（extensions）、Skills、MCP 配置，可在新电脑上快速还原环境。
 
+## 🚀 AI 自动还原（推荐）
+
+在新机器上安装好 pi 后，启动 pi 并对它说：
+
+```
+请阅读 https://raw.githubusercontent.com/anlen123/pi-config/main/AI-RESTORE.md
+并严格按照其中的步骤清单，帮我还原我的 pi 编码助手环境。
+```
+
+pi（或任意带终端工具的 AI）会按 [AI-RESTORE.md](AI-RESTORE.md) 自动完成：
+平台检测（Windows/Linux）→ 获取配置 → 备份旧配置 → 还原 → 平台适配 → MCP → 密钥确认 → 验证报告。
+
 ## 内容结构
 
 ```
@@ -18,7 +30,8 @@
 │   ├── fff/                # 文件访问频率索引
 │   └── bin/                # fd/rg 二进制（Linux-x86_64，其他平台还原时自动清理）
 ├── mcp/                    # MCP 服务器配置（按原路径还原）
-├── restore.sh              # Linux/macOS 还原脚本
+├── AI-RESTORE.md           # ⭐ AI 执行清单（还原时优先让 AI 读这个）
+├── restore.sh              # Linux/macOS 还原脚本（人工/脚本方式）
 ├── restore.ps1             # Windows 还原脚本
 └── INFO.txt                # 备份信息
 ```
