@@ -58,6 +58,10 @@ pi
 
 还原脚本会自动备份旧配置到 `~/.pi/agent.bak-<时间戳>`，并清理平台不兼容的二进制。
 
+**还原过程中会提示输入密钥**（均为本地输入、不回显）：高德 Web服务 key（写入 mcp.json）、
+deepseek / sensenova API key（生成 auth.json）。也可以提前设置 `AMAP_MCP_KEY` 环境变量
+自动注入；都不想做就选 N，还原后手动补充（见下方说明）。
+
 ## ⚠️ 重要说明
 
 ### auth.json（API 密钥）不在此仓库中

@@ -57,16 +57,55 @@ Restore-Mcp "config-mcp.json"     (Join-Path $env:USERPROFILE ".config\mcp\mcp.j
 Restore-Mcp "agents-mcp.json"     (Join-Path $env:USERPROFILE ".agents\mcp.json")
 Restore-Mcp "agents-mcp-mcp.json" (Join-Path $env:USERPROFILE ".agents\mcp\mcp.json")
 
-# 可选：若设置了 AMAP_MCP_KEY 环境变量，把 mcp.json 中的占位符替换为真实 key
-$envKey = $env:AMAP_MCP_KEY
+# ── 4b. 密钥手动输入（还原后提示）──────────────────────────────────────
+# 高德 MCP key：环境变量 AMAP_MCP_KEY 优先，未设置时交互询问用户输入
 $mcpFile = Join-Path $AgentDir "mcp.json"
-if ($envKey -and (Test-Path $mcpFile)) {
-    $content = (Get-Content $mcpFile -Raw).Replace("{env:AMAP_MCP_KEY}", $envKey)
-    Set-Content $mcpFile $content -NoNewline -Encoding UTF8
-    Write-Host "  已注入 AMAP_MCP_KEY 到 mcp.json（amap 高德地图）"
-} else {
-    Write-Host "  提示: 未设置 AMAP_MCP_KEY，mcp.json 保留 {env:AMAP_MCP_KEY} 占位符；" -ForegroundColor Yellow
-    Write-Host "        设置环境变量后运行时自动展开，或手动替换为真实 key。" -ForegroundColor Yellow
+if ((Test-Path $mcpFile) -and (Get-Content $mcpFile -Raw).Contains("{env:AMAP_MCP_KEY}")) {
+    if ($env:AMAP_MCP_KEY) {
+        $content = (Get-Content $mcpFile -Raw).Replace("{env:AMAP_MCP_KEY}", $env:AMAP_MCP_KEY)
+        Set-Content $mcpFile $content -NoNewline -Encoding UTF8
+        Write-Host "  ✅ 已注入 AMAP_MCP_KEY 到 mcp.json（amap 高德地图）" -ForegroundColor Green
+    } else {
+        Write-Host ""
+        Write-Host "==> 检测到高德地图 MCP key 未配置（mcp.json 中为 {env:AMAP_MCP_KEY} 占位符）。"
+        $ans = Read-Host "    是否现在手动输入高德 Web服务 key？[y/N]"
+        if ($ans -match '^[Yy]') {
+            $secure = Read-Host "    请输入高德 Web服务 key（输入不回显）" -AsSecureString
+            if ($secure) {
+                $plain = (New-Object System.Net.NetworkCredential('', $secure)).Password
+                $content = (Get-Content $mcpFile -Raw).Replace("{env:AMAP_MCP_KEY}", $plain)
+                Set-Content $mcpFile $content -NoNewline -Encoding UTF8
+                Write-Host "  ✅ 已写入高德 Web服务 key 到 mcp.json（amap）" -ForegroundColor Green
+            } else {
+                Write-Host "  ⚠ 未输入 key，保留占位符。可设置环境变量 AMAP_MCP_KEY 后重跑 restore.ps1，或手动编辑 mcp.json。" -ForegroundColor Yellow
+            }
+        } else {
+            Write-Host "  已跳过。可设置环境变量 AMAP_MCP_KEY 后重跑 restore.ps1，或手动编辑 mcp.json。" -ForegroundColor Yellow
+        }
+    }
+}
+
+# auth.json（deepseek / sensenova API 密钥）：不存在时提示/询问用户
+$authFile = Join-Path $AgentDir "auth.json"
+if (-not (Test-Path $authFile)) {
+    Write-Host ""
+    Write-Host "==> auth.json 不存在（含 deepseek / sensenova API 密钥）。"
+    $ans = Read-Host "    是否现在手动输入？[y/N]"
+    if ($ans -match '^[Yy]') {
+        $dk = Read-Host "    deepseek API key（输入不回显）" -AsSecureString
+        $sk = Read-Host "    sensenova API key（输入不回显）" -AsSecureString
+        $auth = @{}
+        if ($dk) { $auth["deepseek"] = @{ type = "api_key"; key = (New-Object System.Net.NetworkCredential('', $dk)).Password } }
+        if ($sk) { $auth["sensenova"] = @{ type = "api_key"; key = (New-Object System.Net.NetworkCredential('', $sk)).Password } }
+        if ($auth.Count -gt 0) {
+            $auth | ConvertTo-Json | Set-Content $authFile -Encoding UTF8
+            Write-Host "  ✅ 已写入 auth.json" -ForegroundColor Green
+        } else {
+            Write-Host "  ⚠ 未输入任何 key，auth.json 未生成" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "  已跳过。还原后请手动补充 auth.json（参考 agent/auth.json.example 或从原电脑复制）。" -ForegroundColor Yellow
+    }
 }
 
 # ── 5. npm 包重装（需联网）──────────────────────────────────────────────────

@@ -57,18 +57,75 @@ restore_mcp agents-mcp.json     "$HOME/.agents/mcp.json"
 restore_mcp agents-mcp-mcp.json "$HOME/.agents/mcp/mcp.json"
 
 # 可选：若设置了 AMAP_MCP_KEY 环境变量，把 mcp.json 中的占位符替换为真实 key
-if [ -n "${AMAP_MCP_KEY:-}" ] && [ -f "$PI_AGENT_DIR/mcp.json" ]; then
-  python3 - "$PI_AGENT_DIR/mcp.json" "$AMAP_MCP_KEY" <<'PY'
+# ── 4b. 密钥手动输入（还原后提示）──────────────────────────────────────
+# 高德 MCP key：环境变量 AMAP_MCP_KEY 优先，未设置时交互询问用户输入
+if [ -f "$PI_AGENT_DIR/mcp.json" ] && grep -q '{env:AMAP_MCP_KEY}' "$PI_AGENT_DIR/mcp.json"; then
+  if [ -n "${AMAP_MCP_KEY:-}" ]; then
+    python3 - "$PI_AGENT_DIR/mcp.json" "$AMAP_MCP_KEY" <<'PY'
 import sys
 p, key = sys.argv[1], sys.argv[2]
 s = open(p, encoding="utf-8").read()
 s = s.replace("{env:AMAP_MCP_KEY}", key)
 open(p, "w", encoding="utf-8").write(s)
 PY
-  echo "  已注入 AMAP_MCP_KEY 到 mcp.json（amap 高德地图）"
-else
-  echo "  提示: 未设置 AMAP_MCP_KEY，mcp.json 保留 {env:AMAP_MCP_KEY} 占位符；"
-  echo "        设置环境变量后运行时自动展开，或手动替换为真实 key。"
+    echo "  ✅ 已注入 AMAP_MCP_KEY 到 mcp.json（amap 高德地图）"
+  elif [ -t 0 ]; then
+    echo ""
+    echo "==> 检测到高德地图 MCP key 未配置（mcp.json 中为 {env:AMAP_MCP_KEY} 占位符）。"
+    printf "    是否现在手动输入高德 Web服务 key？[y/N] "
+    read -r ans
+    if [[ "$ans" =~ ^[Yy]$ ]]; then
+      printf "    请输入高德 Web服务 key（输入不回显）: "
+      read -r -s AMAP_KEY_INPUT
+      echo ""
+      if [ -n "$AMAP_KEY_INPUT" ]; then
+        python3 - "$PI_AGENT_DIR/mcp.json" "$AMAP_KEY_INPUT" <<'PY'
+import sys
+p, key = sys.argv[1], sys.argv[2]
+s = open(p, encoding="utf-8").read()
+s = s.replace("{env:AMAP_MCP_KEY}", key)
+open(p, "w", encoding="utf-8").write(s)
+PY
+        unset AMAP_KEY_INPUT
+        echo "  ✅ 已写入高德 Web服务 key 到 mcp.json（amap）"
+      else
+        echo "  ⚠ 未输入 key，保留占位符。可设置环境变量 AMAP_MCP_KEY 后重跑 restore.sh，或手动编辑 mcp.json。"
+      fi
+    else
+      echo "  已跳过。可设置环境变量 AMAP_MCP_KEY 后重跑 restore.sh，或手动编辑 mcp.json。"
+    fi
+  else
+    echo "  提示: AMAP_MCP_KEY 未设置（非交互终端）。mcp.json 保留 {env:AMAP_MCP_KEY} 占位符，"
+    echo "        设置环境变量后运行时自动展开，或手动替换为真实 key。"
+  fi
+fi
+
+# auth.json（deepseek / sensenova API 密钥）：不存在时提示/询问用户
+if [ ! -f "$PI_AGENT_DIR/auth.json" ]; then
+  if [ -t 0 ]; then
+    echo ""
+    echo "==> auth.json 不存在（含 deepseek / sensenova API 密钥）。"
+    printf "    是否现在手动输入？[y/N] "
+    read -r ans
+    if [[ "$ans" =~ ^[Yy]$ ]]; then
+      printf "    deepseek API key（输入不回显）: "; read -r -s DK; echo ""
+      printf "    sensenova API key（输入不回显）: "; read -r -s SK; echo ""
+      python3 - "$PI_AGENT_DIR/auth.json" "$DK" "$SK" <<'PY'
+import json, sys
+p, dk, sk = sys.argv[1], sys.argv[2], sys.argv[3]
+auth = {}
+if dk: auth["deepseek"] = {"type": "api_key", "key": dk}
+if sk: auth["sensenova"] = {"type": "api_key", "key": sk}
+open(p, "w", encoding="utf-8").write(json.dumps(auth, ensure_ascii=False, indent=2) + "\n")
+PY
+      unset DK SK
+      [ -s "$PI_AGENT_DIR/auth.json" ] && echo "  ✅ 已写入 auth.json" || echo "  ⚠ 未输入任何 key，auth.json 未生成"
+    else
+      echo "  已跳过。还原后请手动补充 auth.json（参考 agent/auth.json.example 或从原电脑复制）。"
+    fi
+  else
+    echo "  提示: auth.json 不存在。还原后请手动补充（参考 agent/auth.json.example）。"
+  fi
 fi
 
 # ── 5. npm 包重装（需联网）──────────────────────────────────────────────────

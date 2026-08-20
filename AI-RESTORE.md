@@ -206,6 +206,13 @@ if (Test-Path "$env:USERPROFILE\pi-config\mcp\agent-mcp.json") {
 
 ## 7. API 密钥（auth.json）— 需要用户参与 ⚠️
 
+**密钥不在仓库中**（安全设计）。**本步骤在还原完成后立即执行：必须停下来提示用户手动输入/提供密钥，不得静默跳过。**
+
+- 若用户是用 `restore.sh` / `restore.ps1` 还原的：脚本已内置交互询问（高德 Web服务 key + auth.json 密钥），用户已在终端输入过。AI 只需**验证结果**（见下方「步骤 7 验证」），无需重复询问。
+- 若用户是通过 AI 本清单还原的：AI 必须主动提示用户输入以下密钥，并严格按 7.1 / 7.2 处理。
+
+### 7.1 API 密钥（auth.json）— 需要用户参与
+
 **密钥不在仓库中**（安全设计）。此步骤必须停下询问用户，二选一：
 
 **选项 A：用户有原电脑的密钥文件**
@@ -233,7 +240,7 @@ Copy-Item "$KEY_SRC" "$env:USERPROFILE\.pi\agent\auth.json"
 
 ### 7.2 高德 MCP key（`AMAP_MCP_KEY`）— 同样需要用户参与 ⚠️
 
-`mcp/agent-mcp.json` 中的 URL 含占位符 `{env:AMAP_MCP_KEY}`（仓库 public，未存明文 key）。询问用户，二选一：
+`mcp/agent-mcp.json` 中的 URL 含占位符 `{env:AMAP_MCP_KEY}`（仓库 public，未存明文 key）。**此步骤必须停下询问用户**，二选一：
 
 **选项 A：设置环境变量（推荐，免改文件）**
 
