@@ -1,0 +1,10 @@
+{
+  "deepseek": {
+    "type": "api_key",
+    "key": "REPLACE_WITH_YOUR_DEEPSEEK_API_KEY"
+  },
+  "sensenova": {
+    "type": "api_key",
+    "key": "REPLACE_WITH_YOUR_SENSENOVA_API_KEY"
+  }
+}

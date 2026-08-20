@@ -1,0 +1,38 @@
+{
+  "lastChangelogVersion": "0.84.2",
+  "theme": "dark",
+  "defaultProvider": "deepseek",
+  "defaultModel": "deepseek-v4-flash",
+  "defaultThinkingLevel": "high",
+  "quietStartup": true,
+  "hideThinkingBlock": true,
+  "skills": [],
+  "packages": [
+    "npm:pi-powerline-footer",
+    "npm:pi-cache-optimizer",
+    "npm:pi-web-access",
+    "npm:pi-wtf",
+    "npm:pi-subagents",
+    "npm:@ff-labs/pi-fff",
+    "npm:pi-tool-display",
+    "https://github.com/cap153/pi-ocr-tool",
+    "npm:@hhyy668/pi-desktop-ui",
+    "npm:@narumitw/pi-btw",
+    "npm:pi-mcp-adapter",
+    "npm:@narumitw/pi-goal"
+  ],
+  "powerline": {
+    "welcome": true,
+    "disabledSegments": [
+      "context_pct",
+      "context_total"
+    ]
+  },
+  "tuiMode": "regular",
+  "defaultProjectTrust": "ask",
+  "compaction": {
+    "enabled": true
+  },
+  "enableSkillCommands": true,
+  "externalEditor": "nvim"
+}

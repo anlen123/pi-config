@@ -1,0 +1,285 @@
+{
+  "version": 6,
+  "sessions": {
+    "79c0c951b5e093f3": {
+      "deepseek/deepseek-v4-pro": {
+        "day": "2026-08-19",
+        "totalRequests": 1,
+        "hitRequests": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 10785
+      }
+    },
+    "e77d91af4a4336c0": {
+      "deepseek/deepseek-v4-pro": {
+        "day": "2026-08-19",
+        "totalRequests": 309,
+        "hitRequests": 309,
+        "cachedInputTokens": 48932352,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 49103891
+      }
+    },
+    "61c1b475d7244b5c": {
+      "deepseek/deepseek-v4-pro": {
+        "day": "2026-08-20",
+        "totalRequests": 6,
+        "hitRequests": 6,
+        "cachedInputTokens": 440576,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 442916
+      }
+    },
+    "80b678291511eb41": {
+      "sensenova/deepseek-v4-flash": {
+        "day": "2026-08-19",
+        "totalRequests": 1,
+        "hitRequests": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 10698
+      }
+    },
+    "6cdc488ed7b4aac0": {
+      "sensenova/deepseek-v4-flash": {
+        "day": "2026-08-19",
+        "totalRequests": 1,
+        "hitRequests": 1,
+        "cachedInputTokens": 10496,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 10697
+      }
+    },
+    "df49442305cce658": {
+      "sensenova/deepseek-v4-flash": {
+        "day": "2026-08-19",
+        "totalRequests": 1,
+        "hitRequests": 1,
+        "cachedInputTokens": 10496,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 10697
+      }
+    },
+    "1406920ddc6e5719": {
+      "sensenova/deepseek-v4-flash": {
+        "day": "2026-08-19",
+        "totalRequests": 1,
+        "hitRequests": 1,
+        "cachedInputTokens": 10496,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 10698
+      }
+    },
+    "249828a0c31c37b0": {
+      "sensenova/deepseek-v4-flash": {
+        "day": "2026-08-19",
+        "totalRequests": 1,
+        "hitRequests": 1,
+        "cachedInputTokens": 10496,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 10696
+      }
+    },
+    "e6dec3f46a0f1e72": {
+      "sensenova/deepseek-v4-flash": {
+        "day": "2026-08-19",
+        "totalRequests": 1,
+        "hitRequests": 1,
+        "cachedInputTokens": 1280,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 10697
+      }
+    },
+    "18def740886b1e99": {
+      "sensenova/deepseek-v4-flash": {
+        "day": "2026-08-20",
+        "totalRequests": 47,
+        "hitRequests": 46,
+        "cachedInputTokens": 1519360,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 1573788
+      }
+    },
+    "ef62a3a180db34b5": {
+      "sensenova/deepseek-v4-flash": {
+        "day": "2026-08-20",
+        "totalRequests": 6,
+        "hitRequests": 6,
+        "cachedInputTokens": 82688,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 103373
+      }
+    },
+    "a14658c28d3f3e8a": {
+      "sensenova/deepseek-v4-flash": {
+        "day": "2026-08-20",
+        "totalRequests": 12,
+        "hitRequests": 12,
+        "cachedInputTokens": 407296,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 444110
+      }
+    },
+    "381a4b2bcef177ed": {
+      "sensenova/deepseek-v4-flash": {
+        "day": "2026-08-20",
+        "totalRequests": 1,
+        "hitRequests": 1,
+        "cachedInputTokens": 10496,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 10753
+      }
+    },
+    "5060067b902d0fec": {
+      "sensenova/deepseek-v4-flash": {
+        "day": "2026-08-20",
+        "totalRequests": 6,
+        "hitRequests": 5,
+        "cachedInputTokens": 52736,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 65346
+      }
+    },
+    "87a274cab4d77828": {
+      "deepseek/deepseek-v4-flash": {
+        "day": "2026-08-20",
+        "totalRequests": 110,
+        "hitRequests": 109,
+        "cachedInputTokens": 7279104,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 7336480
+      }
+    },
+    "0a30b7ac596ea4ba": {
+      "deepseek/deepseek-v4-flash": {
+        "day": "2026-08-20",
+        "totalRequests": 3,
+        "hitRequests": 3,
+        "cachedInputTokens": 27904,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 34798
+      }
+    },
+    "10e904351199df0e": {
+      "deepseek/deepseek-v4-flash": {
+        "day": "2026-08-20",
+        "totalRequests": 48,
+        "hitRequests": 48,
+        "cachedInputTokens": 1226368,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 1257448
+      }
+    },
+    "5de0e358c2095e4b": {
+      "deepseek/deepseek-v4-flash": {
+        "day": "2026-08-20",
+        "totalRequests": 45,
+        "hitRequests": 44,
+        "cachedInputTokens": 1922944,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 1974403
+      }
+    },
+    "61745f28c84b39d0": {
+      "deepseek/deepseek-v4-flash": {
+        "day": "2026-08-20",
+        "totalRequests": 10,
+        "hitRequests": 10,
+        "cachedInputTokens": 157952,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 175532
+      }
+    },
+    "f9a35f48f8cefed8": {
+      "deepseek/deepseek-v4-flash": {
+        "day": "2026-08-20",
+        "totalRequests": 14,
+        "hitRequests": 14,
+        "cachedInputTokens": 218368,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 221206
+      }
+    },
+    "9384fe7ca5cb2ba4": {
+      "deepseek/deepseek-v4-flash": {
+        "day": "2026-08-20",
+        "totalRequests": 14,
+        "hitRequests": 13,
+        "cachedInputTokens": 315776,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 339786
+      }
+    },
+    "09b0be2ef2154b90": {
+      "sensenova/deepseek-v4-flash": {
+        "day": "2026-08-20",
+        "totalRequests": 1,
+        "hitRequests": 0,
+        "cachedInputTokens": 0,
+        "cacheWriteInputTokens": 0,
+        "totalInputTokens": 12062
+      }
+    }
+  },
+  "totalsByModel": {
+    "deepseek/deepseek-v4-pro": {
+      "day": "2026-08-20",
+      "totalRequests": 0,
+      "hitRequests": 0,
+      "cachedInputTokens": 0,
+      "cacheWriteInputTokens": 0,
+      "totalInputTokens": 0
+    },
+    "sensenova/deepseek-v4-flash": {
+      "day": "2026-08-20",
+      "totalRequests": 71,
+      "hitRequests": 69,
+      "cachedInputTokens": 2052096,
+      "cacheWriteInputTokens": 0,
+      "totalInputTokens": 2176120
+    },
+    "deepseek/deepseek-v4-flash": {
+      "day": "2026-08-20",
+      "totalRequests": 175,
+      "hitRequests": 173,
+      "cachedInputTokens": 7387008,
+      "cacheWriteInputTokens": 0,
+      "totalInputTokens": 7512906
+    }
+  },
+  "legacyFamily": {
+    "deepseek": {
+      "day": "2026-08-20",
+      "totalRequests": 0,
+      "hitRequests": 0,
+      "cachedInputTokens": 0,
+      "cacheWriteInputTokens": 0,
+      "totalInputTokens": 0
+    },
+    "openai": {
+      "day": "2026-08-20",
+      "totalRequests": 0,
+      "hitRequests": 0,
+      "cachedInputTokens": 0,
+      "cacheWriteInputTokens": 0,
+      "totalInputTokens": 0
+    },
+    "claude": {
+      "day": "2026-08-20",
+      "totalRequests": 0,
+      "hitRequests": 0,
+      "cachedInputTokens": 0,
+      "cacheWriteInputTokens": 0,
+      "totalInputTokens": 0
+    },
+    "gemini": {
+      "day": "2026-08-20",
+      "totalRequests": 0,
+      "hitRequests": 0,
+      "cachedInputTokens": 0,
+      "cacheWriteInputTokens": 0,
+      "totalInputTokens": 0
+    }
+  }
+}

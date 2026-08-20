@@ -1,0 +1,20 @@
+{
+  "name": "pi-extensions",
+  "private": true,
+  "dependencies": {
+    "@ff-labs/pi-fff": "^0.10.5",
+    "@hhyy668/pi-ai": "^0.80.7",
+    "@hhyy668/pi-coding-agent": "^0.80.7",
+    "@hhyy668/pi-desktop-ui": "^1.3.4",
+    "@hhyy668/pi-tui": "^0.80.7",
+    "@narumitw/pi-btw": "^0.54.1",
+    "@narumitw/pi-goal": "^0.52.1",
+    "pi-cache-optimizer": "^2.8.3",
+    "pi-mcp-adapter": "^2.26.1",
+    "pi-powerline-footer": "^0.15.1",
+    "pi-subagents": "^0.51.0",
+    "pi-tool-display": "^0.5.0",
+    "pi-web-access": "^0.24.0",
+    "pi-wtf": "^0.2.4"
+  }
+}
