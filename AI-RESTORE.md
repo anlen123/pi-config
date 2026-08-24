@@ -93,25 +93,38 @@ Move-Item "$env:USERPROFILE\pi-config-main" "$env:USERPROFILE\pi-config" -Force
 
 ## 3. 备份现有配置（防误操作）
 
-如果目标目录已存在且非空，先备份（**不删除原数据**）：
+如果目标目录已存在且非空，先备份（**不删除原数据**）。
+
+> ⚠️ **关键**：`sessions/` 是运行中的 pi 正在写入的会话目录，必须**保留在原位**，
+> 否则 mv 之后运行中的 pi 追加会话日志会报 `ENOENT: no such file or directory`
+> （文件路径已不存在）。因此备份采用「mv 后把 sessions/ 移回原位」的方式。
 
 ```bash
 # Linux
 if [ -d "$HOME/.pi/agent" ] && [ -n "$(ls -A "$HOME/.pi/agent" 2>/dev/null)" ]; then
-  mv "$HOME/.pi/agent" "$HOME/.pi/agent.bak-$(date +%Y%m%d-%H%M%S)"
-  echo "已备份到: $HOME/.pi/agent.bak-*"
+  BAK="$HOME/.pi/agent.bak-$(date +%Y%m%d-%H%M%S)"
+  mv "$HOME/.pi/agent" "$BAK"
+  mkdir -p "$HOME/.pi/agent"
+  [ -d "$BAK/sessions" ] && mv "$BAK/sessions" "$HOME/.pi/agent/sessions"
+  echo "已备份到: $BAK（sessions/ 保留在原位）"
 fi
 ```
 ```powershell
-# Windows
+# Windows（同样：sessions/ 保留在原位）
 if (Test-Path "$env:USERPROFILE\.pi\agent") {
-  Move-Item "$env:USERPROFILE\.pi\agent" "$env:USERPROFILE\.pi\agent.bak-$(Get-Date -Format yyyyMMdd-HHmmss)"
+  $bak = "$env:USERPROFILE\.pi\agent.bak-" + (Get-Date -Format yyyyMMdd-HHmmss)
+  Move-Item "$env:USERPROFILE\.pi\agent" $bak
+  New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.pi\agent" | Out-Null
+  if (Test-Path "$bak\sessions") {
+    Move-Item "$bak\sessions" "$env:USERPROFILE\.pi\agent\sessions"
+  }
 }
 ```
 
 ### ✅ 步骤 3 验证
 
 - 原目录已被改名（存在 `.bak-*` 目录），或原本就不存在。
+- 新目录下 `sessions/` 仍存在（旧会话历史未丢失；若原本就没有则忽略）。
 
 ---
 
@@ -142,7 +155,8 @@ Copy-Item "$env:USERPROFILE\pi-config\agent\*" "$env:USERPROFILE\.pi\agent" -Rec
 | `git/` | git 包缓存 |
 | `auth.json.example` | 密钥模板（不是密钥本体） |
 
-> **预期缺失**（正常现象，不要报错）：`auth.json`（密钥，步骤 7 处理）、`sessions/`（会话历史，不随仓库分发）。
+> **预期缺失**（正常现象，不要报错）：`auth.json`（密钥，步骤 7 处理）。
+> `sessions/` 按步骤 3 已保留在原位（旧会话历史，不随仓库分发）。
 
 ---
 
@@ -349,6 +363,7 @@ pi --version
 | settings.json 里包无法安装（版本冲突） | 不阻塞，报告具体包名 |
 | 用户机器是 Linux ARM（如树莓派） | bin/ 已删除，提示 pi 会获取对应架构的 fd/rg |
 | 还原后扩展报错 | 检查 `extensions/` 文件是否完整 → 报告错误信息，不擅自改代码 |
+| 还原后 pi 报 ENOENT（`no such file or directory ... sessions/...jsonl`） | 原因：备份时把运行中的 pi 正在写入的 `sessions/` 目录 mv 走了，pi 按原路径追加会话日志失败。**旧会话文件并没有丢**，在 `.bak-*/sessions/` 里。处理：`mkdir -p ~/.pi/agent && mv ~/.pi/agent.bak-*/sessions ~/.pi/agent/`（把会话目录移回原位即可，无需重跑还原）。备份逻辑已更新为保留 sessions/ 在原位，新还原不会再出现此问题。 |
 | 用户无任何密钥 | 明确告知：pi 可启动，但默认 provider（deepseek）无法调用，需用户补 auth.json |
 
 ## 附录 B：更新已有还原（原机器配置变更后）

@@ -20,10 +20,18 @@ echo "==> 目标目录: $PI_AGENT_DIR"
 [ -d "$HERE/agent" ] || { echo "错误: 当前目录不是 pi-portable 解压目录（缺少 agent/）"; exit 1; }
 
 # ── 1. 备份现有配置 ─────────────────────────────────────────────────────────
+# 注意：sessions/ 是运行中的 pi 正在写入的会话目录，必须保留在原位，
+#       否则 mv 之后运行中的 pi 追加会话日志会报 ENOENT（文件路径已不存在）。
 if [ -d "$PI_AGENT_DIR" ] && [ -n "$(ls -A "$PI_AGENT_DIR" 2>/dev/null)" ]; then
   BAK="$PI_AGENT_DIR.bak-$(date +%Y%m%d-%H%M%S)"
   mv "$PI_AGENT_DIR" "$BAK"
-  echo "  已备份原配置到: $BAK"
+  mkdir -p "$PI_AGENT_DIR"
+  if [ -d "$BAK/sessions" ]; then
+    mv "$BAK/sessions" "$PI_AGENT_DIR/sessions"
+    echo "  已备份原配置到: $BAK（sessions/ 保留在原位，避免运行中的 pi 写会话报 ENOENT）"
+  else
+    echo "  已备份原配置到: $BAK"
+  fi
 fi
 
 # ── 2. 还原文件 ─────────────────────────────────────────────────────────────

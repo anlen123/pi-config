@@ -23,10 +23,19 @@ if (-not (Test-Path (Join-Path $HERE "agent"))) {
 }
 
 # ── 1. 备份现有配置 ─────────────────────────────────────────────────────────
+# 注意：sessions/ 是运行中的 pi 正在写入的会话目录，必须保留在原位，
+#       否则 Move-Item 之后运行中的 pi 追加会话日志会报 ENOENT（文件路径已不存在）。
 if (Test-Path $AgentDir) {
     $bak = "$AgentDir.bak-" + (Get-Date -Format "yyyyMMdd-HHmmss")
     Move-Item $AgentDir $bak
-    Write-Host "  已备份原配置到: $bak"
+    New-Item -ItemType Directory -Force -Path $AgentDir | Out-Null
+    $sessionsDir = Join-Path $bak "sessions"
+    if (Test-Path $sessionsDir) {
+        Move-Item $sessionsDir (Join-Path $AgentDir "sessions")
+        Write-Host "  已备份原配置到: $bak（sessions/ 保留在原位，避免运行中的 pi 写会话报 ENOENT）"
+    } else {
+        Write-Host "  已备份原配置到: $bak"
+    }
 }
 
 # ── 2. 还原文件 ─────────────────────────────────────────────────────────────
