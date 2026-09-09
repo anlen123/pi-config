@@ -3,8 +3,12 @@
     "type": "api_key",
     "key": "REPLACE_WITH_YOUR_DEEPSEEK_API_KEY"
   },
-  "sensenova": {
+  "agentrouter": {
     "type": "api_key",
-    "key": "REPLACE_WITH_YOUR_SENSENOVA_API_KEY"
+    "key": "REPLACE_WITH_YOUR_AGENTROUTER_API_KEY"
+  },
+  "fluxionai": {
+    "type": "api_key",
+    "key": "REPLACE_WITH_YOUR_FLUXIONAI_API_KEY"
   }
 }

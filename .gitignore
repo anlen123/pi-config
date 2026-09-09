@@ -1,2 +1,15 @@
+# 密钥与隐私（绝不提交）
 agent/auth.json
+agent/auth.json.bak*
 agent/sessions/
+
+# 运行时数据/缓存（可重建，不入库）
+agent/*.bak*
+agent/mcp-cache.json
+agent/mcp-npx-cache.json
+agent/run-history.jsonl
+agent/missions/
+agent/powerline-footer/
+agent/pi-crash.log
+agent/pi-cache-optimizer-stats.d/
+agent/npm/node_modules/

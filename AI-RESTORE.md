@@ -145,12 +145,13 @@ Copy-Item "$env:USERPROFILE\pi-config\agent\*" "$env:USERPROFILE\.pi\agent" -Rec
 
 | 路径（相对 `PI_AGENT`） | 说明 |
 |---|---|
-| `settings.json` | 全局设置（含 12 个 packages） |
-| `models.json` | 自定义 provider/model |
+| `settings.json` | 全局设置（含 11 个 packages） |
+| `models.json` | 自定义 provider/model（suixiang/zhipuai 的 apiKey 为环境变量插值，见步骤 7） |
 | `models-store.json` | 模型存储 |
 | `AGENTS.md` | 全局沟通规则（中文） |
-| `extensions/` | 至少 3 个文件（`model-info-footer.ts`、`context-progress-bar.ts`、`mcp/index.ts`） |
-| `skills/` | 至少 26 个目录 |
+| `keybindings.json` / `trust.json` / `pi-fff.json` | 快捷键 / 项目信任 / fff 设置 |
+| `extensions/` | 7 个文件（model-info-footer、context-progress-bar、dedupe-status、deepseek-balance、deepseek-peak-status、herdr-agent-state、mcp/index.ts） |
+| `skills/` | 12 个目录 |
 | `npm/package.json` + `npm/package-lock.json` | 包清单 |
 | `git/` | git 包缓存 |
 | `auth.json.example` | 密钥模板（不是密钥本体） |
@@ -247,9 +248,13 @@ Copy-Item "$KEY_SRC" "$env:USERPROFILE\.pi\agent\auth.json"
 ```json
 {
   "deepseek": { "type": "api_key", "key": "sk-你的deepseek密钥" },
-  "sensenova": { "type": "api_key", "key": "sk-你的sensenova密钥" }
+  "agentrouter": { "type": "api_key", "key": "你的agentrouter密钥" },
+  "fluxionai": { "type": "api_key", "key": "你的fluxionai密钥" }
 }
 ```
+
+另外 `models.json` 中 suixiang / zhipuai 的 `apiKey` 是环境变量插值占位符，需要设置
+`SUIXIANG_API_KEY` / `ZHIPUAI_API_KEY` 环境变量（pi 运行时自动展开），或手动替换为真实 key。
 **AI 不得代替用户猜测密钥**；用户填写完成后，AI 再验证。
 
 ### 7.2 高德 MCP key（`AMAP_MCP_KEY`）— 同样需要用户参与 ⚠️
@@ -315,8 +320,8 @@ Set-Location "$env:USERPROFILE\.pi\agent\npm"; npm ci
 ```bash
 # Linux
 ls "$HOME/.pi/agent/settings.json" "$HOME/.pi/agent/models.json" "$HOME/.pi/agent/AGENTS.md" >/dev/null && echo "核心配置 OK"
-find "$HOME/.pi/agent/skills" -maxdepth 1 -type d | wc -l   # 应 >= 26
-ls "$HOME/.pi/agent/extensions/"                              # 3 个 ts 文件
+find "$HOME/.pi/agent/skills" -maxdepth 1 -type d | wc -l   # 应 >= 12
+ls "$HOME/.pi/agent/extensions/"                              # 7 个 ts 文件（含 mcp/ 目录）
 cat "$HOME/.pi/agent/settings.json" | python3 -m json.tool >/dev/null && echo "settings.json 合法 JSON"
 [ -f "$HOME/.pi/agent/auth.json" ] && echo "auth.json 存在" || echo "⚠ auth.json 缺失（用户未提供密钥）"
 [ -f "$HOME/.pi/agent/mcp.json" ] && cat "$HOME/.pi/agent/mcp.json" | python3 -m json.tool >/dev/null && echo "mcp.json 存在且合法"
@@ -325,7 +330,7 @@ pi --version
 ```powershell
 # Windows
 Test-Path "$env:USERPROFILE\.pi\agent\settings.json"   # True
-(Get-ChildItem "$env:USERPROFILE\.pi\agent\skills" -Directory).Count  # 应 >= 26
+(Get-ChildItem "$env:USERPROFILE\.pi\agent\skills" -Directory).Count  # 应 >= 12
 Get-Content "$env:USERPROFILE\.pi\agent\settings.json" -Raw | ConvertFrom-Json | Out-Null; Write-Host "settings.json 合法 JSON"
 pi --version
 ```
@@ -337,8 +342,8 @@ pi --version
 - 平台：<Linux x86_64 / Windows ...>
 - 配置来源：<git clone / ZIP 下载>
 - 核心配置：✅ / ❌ <具体缺失项>
-- extensions：✅ 3 个
-- skills：✅ N 个目录
+- extensions：✅ 7 个（4 个新扩展：dedupe-status / deepseek-balance / deepseek-peak-status / herdr-agent-state）
+- skills：✅ N 个目录（当前 12）
 - MCP 配置：✅ amap 已还原（key: 环境变量 AMAP_MCP_KEY 已设置 / 已替换 / ⚠ 占位符未填）
 - auth.json：✅ / ⚠ 未配置（用户需自行补密钥）
 - npm packages：✅ 已安装 N 个 / ⚠ 需 pi 首次启动自动安装

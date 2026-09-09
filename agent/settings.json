@@ -1,8 +1,8 @@
 {
-  "lastChangelogVersion": "0.84.2",
+  "lastChangelogVersion": "0.85.1",
   "theme": "dark",
-  "defaultProvider": "deepseek",
-  "defaultModel": "deepseek-v4-flash",
+  "defaultProvider": "agentrouter",
+  "defaultModel": "glm-5.3",
   "defaultThinkingLevel": "high",
   "quietStartup": true,
   "hideThinkingBlock": true,
@@ -16,7 +16,6 @@
     "npm:@ff-labs/pi-fff",
     "npm:pi-tool-display",
     "https://github.com/cap153/pi-ocr-tool",
-    "npm:@hhyy668/pi-desktop-ui",
     "npm:@narumitw/pi-btw",
     "npm:pi-mcp-adapter",
     "npm:@narumitw/pi-goal"
@@ -25,7 +24,8 @@
     "welcome": true,
     "disabledSegments": [
       "context_pct",
-      "context_total"
+      "context_total",
+      "cache_read"
     ]
   },
   "tuiMode": "regular",

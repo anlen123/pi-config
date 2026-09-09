@@ -1,7 +1,16 @@
 Pi 配置备份
 =====================================
-备份时间 : 2026-08-20 12:08:24
-源平台   : Linux x86_64 (5.15.167.4-microsoft-standard-WSL2)
-pi 版本  : 0.84.2
+备份时间 : 2026-09-09 13:30:00
+源平台   : Linux x86_64 (WSL2)
+pi 版本  : 0.85.1
 MCP 配置 : 1 个文件（mcp/agent-mcp.json，高德 amap，key 已脱敏为 {env:AMAP_MCP_KEY} 占位符）
 node_modules : 未包含(还原时联网重装)
+
+本次更新要点（相对 2026-08-20 版）:
+- settings.json: 默认模型 deepseek → agentrouter/glm-5.3；移除 @hhyy668/pi-desktop-ui 包
+- extensions/ 新增 4 个: dedupe-status / deepseek-balance / deepseek-peak-status / herdr-agent-state
+- skills/ 精简: 26 → 12 个目录（删除 canvas-design、theme-factory 等示例/未用技能）
+- 新增配置文件: keybindings.json、trust.json、pi-fff.json
+- models.json: 新增 providers（suixiang/zhipuai 等），apiKey 已脱敏为
+  ${SUIXIANG_API_KEY} / ${ZHIPUAI_API_KEY} 环境变量插值（pi 原生支持，设置环境变量即可）
+- auth.json.example: 更新为当前 providers（deepseek / agentrouter / fluxionai）

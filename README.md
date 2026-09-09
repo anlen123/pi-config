@@ -23,8 +23,11 @@ pi（或任意带终端工具的 AI）会按 [AI-RESTORE.md](AI-RESTORE.md) 自�
 │   ├── models.json         # 自定义 provider / model 配置
 │   ├── models-store.json
 │   ├── AGENTS.md           # 全局沟通规则
-│   ├── extensions/         # 本地插件（model-info-footer、context-progress-bar、MCP 客户端）
-│   ├── skills/             # 全部 Skills（含自定义技能）
+│   ├── keybindings.json    # 自定义快捷键
+│   ├── trust.json          # 项目信任列表
+│   ├── pi-fff.json         # fff 设置
+│   ├── extensions/         # 本地插件（model-info-footer、context-progress-bar、dedupe-status、deepseek-balance、deepseek-peak-status、herdr-agent-state、MCP 客户端）
+│   ├── skills/             # 全部 Skills（12 个目录）
 │   ├── npm/                # npm 包清单（还原时联网重装 node_modules）
 │   ├── git/                # git 方式安装的包（pi-ocr-tool）
 │   ├── fff/                # 文件访问频率索引
@@ -59,19 +62,32 @@ pi
 还原脚本会自动备份旧配置到 `~/.pi/agent.bak-<时间戳>`，并清理平台不兼容的二进制。
 
 **还原过程中会提示输入密钥**（均为本地输入、不回显）：高德 Web服务 key（写入 mcp.json）、
-deepseek / sensenova API key（生成 auth.json）。也可以提前设置 `AMAP_MCP_KEY` 环境变量
+deepseek / agentrouter / fluxionai API key（生成 auth.json）。也可以提前设置 `AMAP_MCP_KEY` 环境变量
 自动注入；都不想做就选 N，还原后手动补充（见下方说明）。
 
 ## ⚠️ 重要说明
 
 ### auth.json（API 密钥）不在此仓库中
 
-出于安全考虑（本仓库是 **public**），`agent/auth.json`（含 deepseek / sensenova
-API 密钥）**未上传**。还原后需要手动补上，二选一：
+出于安全考虑（本仓库是 **public**），`agent/auth.json`（含 deepseek / agentrouter /
+fluxionai API 密钥）**未上传**。还原后需要手动补上，二选一：
 
 - **方式 A**：从原电脑 `~/.pi/agent/auth.json` 复制到新电脑相同位置
 - **方式 B**：直接编辑新电脑的 `~/.pi/agent/auth.json`，格式参考
   `agent/auth.json.example`（本仓库提供模板）
+
+### models.json 中的 provider 密钥已脱敏
+
+`agent/models.json` 中 suixiang / zhipuai 两个 provider 的 `apiKey` 已替换为
+环境变量插值（pi 原生支持 `$VAR` / `${VAR}` 语法，运行时自动展开）：
+
+```bash
+export SUIXIANG_API_KEY="你的 suixiang key"
+export ZHIPUAI_API_KEY="你的智谱 key"
+```
+
+或直接把 `models.json` 中的 `${SUIXIANG_API_KEY}` / `${ZHIPUAI_API_KEY}`
+替换为真实 key（勿提交回本仓库）。
 
 ### 会话历史（sessions/）不在仓库中
 

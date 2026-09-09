@@ -32,7 +32,7 @@ export default function (pi: ExtensionAPI) {
 
 		if (percent === null || percent === undefined) {
 			// 未知（例如刚压缩后、首个响应前）
-			ctx.ui.setStatus("context-progress", dim("ctx ") + dim("░".repeat(CELLS)));
+			ctx.ui.setStatus("context-progress", dim("ctx ") + dim("?%") + dim("░".repeat(CELLS)));
 			return;
 		}
 
@@ -44,7 +44,9 @@ export default function (pi: ExtensionAPI) {
 		const fill = theme.fg(color, "█".repeat(fullChars) + PARTIAL[partial]);
 		const empty = dim("░".repeat(Math.max(0, CELLS - fullChars - (partial > 0 ? 1 : 0))));
 
-		ctx.ui.setStatus("context-progress", dim("ctx ") + fill + empty);
+		// 百分比数字（与进度条同色，未知时显示 ?%)
+		const pct = `${Math.round(percent)}%`;
+		ctx.ui.setStatus("context-progress", dim("ctx ") + fill + empty + theme.fg(color, ` ${pct}`));
 	}
 
 	pi.on("session_start", (_event, ctx) => renderProgress(ctx));
