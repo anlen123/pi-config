@@ -26,8 +26,8 @@ pi（或任意带终端工具的 AI）会按 [AI-RESTORE.md](AI-RESTORE.md) 自�
 │   ├── keybindings.json    # 自定义快捷键
 │   ├── trust.json          # 项目信任列表
 │   ├── pi-fff.json         # fff 设置
-│   ├── extensions/         # 本地插件（model-info-footer、context-progress-bar、dedupe-status、deepseek-balance、deepseek-peak-status、herdr-agent-state、MCP 客户端）
-│   ├── skills/             # 全部 Skills（12 个目录）
+│   ├── extensions/         # 本地插件（model-info-footer、context-progress-bar、dedupe-status、deepseek-balance、deepseek-peak-status、herdr-agent-state、live-thinking、question、bash-guard、prompt-snippets、MCP 客户端）
+│   ├── skills/             # 全部 Skills（13 个目录）
 │   ├── npm/                # npm 包清单（还原时联网重装 node_modules）
 │   ├── git/                # git 方式安装的包（pi-ocr-tool）
 │   ├── fff/                # 文件访问频率索引
@@ -60,6 +60,7 @@ pi
 ```
 
 还原脚本会自动备份旧配置到 `~/.pi/agent.bak-<时间戳>`，并清理平台不兼容的二进制。
+若存在 `extensions/bash-guard/`，还原脚本会额外联网安装其依赖（shell-quote）。
 
 **还原过程中会提示输入密钥**（均为本地输入、不回显）：高德 Web服务 key（写入 mcp.json）、
 deepseek / agentrouter / fluxionai API key（生成 auth.json）。也可以提前设置 `AMAP_MCP_KEY` 环境变量

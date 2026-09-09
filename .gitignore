@@ -13,3 +13,7 @@ agent/powerline-footer/
 agent/pi-crash.log
 agent/pi-cache-optimizer-stats.d/
 agent/npm/node_modules/
+
+# 扩展依赖（还原时重装）
+agent/extensions/*/node_modules/
+__pycache__/

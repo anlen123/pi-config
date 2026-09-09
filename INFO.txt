@@ -1,16 +1,25 @@
 Pi 配置备份
 =====================================
-备份时间 : 2026-09-09 13:30:00
+备份时间 : 2026-09-09 15:10:00
 源平台   : Linux x86_64 (WSL2)
 pi 版本  : 0.85.1
 MCP 配置 : 1 个文件（mcp/agent-mcp.json，高德 amap，key 已脱敏为 {env:AMAP_MCP_KEY} 占位符）
 node_modules : 未包含(还原时联网重装)
 
-本次更新要点（相对 2026-08-20 版）:
-- settings.json: 默认模型 deepseek → agentrouter/glm-5.3；移除 @hhyy668/pi-desktop-ui 包
-- extensions/ 新增 4 个: dedupe-status / deepseek-balance / deepseek-peak-status / herdr-agent-state
-- skills/ 精简: 26 → 12 个目录（删除 canvas-design、theme-factory 等示例/未用技能）
-- 新增配置文件: keybindings.json、trust.json、pi-fff.json
-- models.json: 新增 providers（suixiang/zhipuai 等），apiKey 已脱敏为
-  ${SUIXIANG_API_KEY} / ${ZHIPUAI_API_KEY} 环境变量插值（pi 原生支持，设置环境变量即可）
-- auth.json.example: 更新为当前 providers（deepseek / agentrouter / fluxionai）
+本次更新要点（相对 2026-09-09 13:30 版）:
+- extensions/ 新增 4 个: bash-guard（目录型，依赖 shell-quote，还原脚本自动 npm install）/
+  prompt-snippets（目录型，含 6 个提示词片段）/ live-thinking.ts（流式实时思考展示+历史折叠，
+  配合 hideThinkingBlock: true）/ question.ts（带选项的提问工具，自定义 TUI）
+- skills/ 新增 1 个: analyze-sessions（会话分析：成本/搜索/展示，13 个目录）
+- settings.json: hideThinkingBlock 确认为 true（配合 live-thinking 扩展）
+- trust.json: 新增信任 /root/tt
+- .gitignore: 新增 agent/extensions/*/node_modules/ 与 __pycache__/ 规则
+- restore.sh / restore.ps1: 新增 bash-guard 依赖安装；auth.json 交互提示由过时的
+  sensenova 更正为 agentrouter / fluxionai（与 auth.json.example 一致）
+- 高德 amap MCP 已恢复到本机 live 环境（~/.pi/agent/mcp.json，真实 key 从
+  langfuse_github 项目配置提取），仓库中保持脱敏占位符不变
+
+维持不变:
+- models.json: 保持 ${SUIXIANG_API_KEY} / ${ZHIPUAI_API_KEY} 环境变量插值脱敏
+- models-store.json / fff 数据库: 跳过运行时数据更新
+- auth.json.example: 保持仓库现有版本（比 live 新）

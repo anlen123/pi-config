@@ -150,8 +150,8 @@ Copy-Item "$env:USERPROFILE\pi-config\agent\*" "$env:USERPROFILE\.pi\agent" -Rec
 | `models-store.json` | 模型存储 |
 | `AGENTS.md` | 全局沟通规则（中文） |
 | `keybindings.json` / `trust.json` / `pi-fff.json` | 快捷键 / 项目信任 / fff 设置 |
-| `extensions/` | 7 个文件（model-info-footer、context-progress-bar、dedupe-status、deepseek-balance、deepseek-peak-status、herdr-agent-state、mcp/index.ts） |
-| `skills/` | 12 个目录 |
+| `extensions/` | 8 个 ts 文件（model-info-footer、context-progress-bar、dedupe-status、deepseek-balance、deepseek-peak-status、herdr-agent-state、live-thinking、question）+ bash-guard/ 目录（依赖 shell-quote，见步骤 8）+ prompt-snippets/ 目录 + mcp/index.ts |
+| `skills/` | 13 个目录 |
 | `npm/package.json` + `npm/package-lock.json` | 包清单 |
 | `git/` | git 包缓存 |
 | `auth.json.example` | 密钥模板（不是密钥本体） |
@@ -309,6 +309,7 @@ Set-Location "$env:USERPROFILE\.pi\agent\npm"; npm ci
 ### ✅ 步骤 8 验证
 
 - `npm/node_modules/` 存在且非空（`ls node_modules | wc -l` 输出大于 5；完全离线时可能为 0，注明即可）。
+- `extensions/bash-guard/node_modules/shell-quote/` 存在（bash-guard 依赖；未安装时 bash-guard 扩展会报 shell-quote 找不到，可手动：`cd $PI_AGENT/extensions/bash-guard && npm install --omit=dev`）。
 - `npm ci` 失败但 pi 能启动：接受降级，注明「由 pi 首次启动时自动安装」。
 
 ---
@@ -320,8 +321,8 @@ Set-Location "$env:USERPROFILE\.pi\agent\npm"; npm ci
 ```bash
 # Linux
 ls "$HOME/.pi/agent/settings.json" "$HOME/.pi/agent/models.json" "$HOME/.pi/agent/AGENTS.md" >/dev/null && echo "核心配置 OK"
-find "$HOME/.pi/agent/skills" -maxdepth 1 -type d | wc -l   # 应 >= 12
-ls "$HOME/.pi/agent/extensions/"                              # 7 个 ts 文件（含 mcp/ 目录）
+find "$HOME/.pi/agent/skills" -maxdepth 1 -type d | wc -l   # 应 >= 13
+ls "$HOME/.pi/agent/extensions/"                              # 8 个 ts 文件 + bash-guard/ + prompt-snippets/ + mcp/ 目录
 cat "$HOME/.pi/agent/settings.json" | python3 -m json.tool >/dev/null && echo "settings.json 合法 JSON"
 [ -f "$HOME/.pi/agent/auth.json" ] && echo "auth.json 存在" || echo "⚠ auth.json 缺失（用户未提供密钥）"
 [ -f "$HOME/.pi/agent/mcp.json" ] && cat "$HOME/.pi/agent/mcp.json" | python3 -m json.tool >/dev/null && echo "mcp.json 存在且合法"
@@ -330,7 +331,7 @@ pi --version
 ```powershell
 # Windows
 Test-Path "$env:USERPROFILE\.pi\agent\settings.json"   # True
-(Get-ChildItem "$env:USERPROFILE\.pi\agent\skills" -Directory).Count  # 应 >= 12
+(Get-ChildItem "$env:USERPROFILE\.pi\agent\skills" -Directory).Count  # 应 >= 13
 Get-Content "$env:USERPROFILE\.pi\agent\settings.json" -Raw | ConvertFrom-Json | Out-Null; Write-Host "settings.json 合法 JSON"
 pi --version
 ```
@@ -342,8 +343,8 @@ pi --version
 - 平台：<Linux x86_64 / Windows ...>
 - 配置来源：<git clone / ZIP 下载>
 - 核心配置：✅ / ❌ <具体缺失项>
-- extensions：✅ 7 个（4 个新扩展：dedupe-status / deepseek-balance / deepseek-peak-status / herdr-agent-state）
-- skills：✅ N 个目录（当前 12）
+- extensions：✅ 8 ts + 2 目录（本次新增：live-thinking / question / bash-guard / prompt-snippets）
+- skills：✅ N 个目录（当前 13，本次新增：analyze-sessions）
 - MCP 配置：✅ amap 已还原（key: 环境变量 AMAP_MCP_KEY 已设置 / 已替换 / ⚠ 占位符未填）
 - auth.json：✅ / ⚠ 未配置（用户需自行补密钥）
 - npm packages：✅ 已安装 N 个 / ⚠ 需 pi 首次启动自动安装

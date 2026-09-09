@@ -94,18 +94,20 @@ if ((Test-Path $mcpFile) -and (Get-Content $mcpFile -Raw).Contains("{env:AMAP_MC
     }
 }
 
-# auth.json（deepseek / sensenova API 密钥）：不存在时提示/询问用户
+# auth.json（deepseek / agentrouter / fluxionai API 密钥）：不存在时提示/询问用户
 $authFile = Join-Path $AgentDir "auth.json"
 if (-not (Test-Path $authFile)) {
     Write-Host ""
-    Write-Host "==> auth.json 不存在（含 deepseek / sensenova API 密钥）。"
+    Write-Host "==> auth.json 不存在（含 deepseek / agentrouter / fluxionai API 密钥）。"
     $ans = Read-Host "    是否现在手动输入？[y/N]"
     if ($ans -match '^[Yy]') {
         $dk = Read-Host "    deepseek API key（输入不回显）" -AsSecureString
-        $sk = Read-Host "    sensenova API key（输入不回显）" -AsSecureString
+        $ar = Read-Host "    agentrouter API key（输入不回显）" -AsSecureString
+        $fx = Read-Host "    fluxionai API key（输入不回显）" -AsSecureString
         $auth = @{}
         if ($dk) { $auth["deepseek"] = @{ type = "api_key"; key = (New-Object System.Net.NetworkCredential('', $dk)).Password } }
-        if ($sk) { $auth["sensenova"] = @{ type = "api_key"; key = (New-Object System.Net.NetworkCredential('', $sk)).Password } }
+        if ($ar) { $auth["agentrouter"] = @{ type = "api_key"; key = (New-Object System.Net.NetworkCredential('', $ar)).Password } }
+        if ($fx) { $auth["fluxionai"] = @{ type = "api_key"; key = (New-Object System.Net.NetworkCredential('', $fx)).Password } }
         if ($auth.Count -gt 0) {
             $auth | ConvertTo-Json | Set-Content $authFile -Encoding UTF8
             Write-Host "  ✅ 已写入 auth.json" -ForegroundColor Green
@@ -118,6 +120,20 @@ if (-not (Test-Path $authFile)) {
 }
 
 # ── 5. npm 包重装（需联网）──────────────────────────────────────────────────
+$bashGuardDir = Join-Path $AgentDir "extensions\bash-guard"
+if (Test-Path (Join-Path $bashGuardDir "package.json")) {
+    Write-Host "==> 安装 bash-guard 扩展依赖（shell-quote）..."
+    Push-Location $bashGuardDir
+    try {
+        npm install --omit=dev | Select-Object -Last 2
+        Write-Host "  ✅ bash-guard 扩展依赖已安装"
+    } catch {
+        Write-Host "  ⚠ bash-guard npm install 失败（需联网）。缺失时 bash-guard 扩展会报 shell-quote 找不到。" -ForegroundColor Yellow
+    } finally {
+        Pop-Location
+    }
+}
+
 $pkgJson = Join-Path $AgentDir "npm\package.json"
 if (Test-Path $pkgJson) {
     Write-Host "==> 尝试重装 npm packages（需联网）..."

@@ -108,25 +108,27 @@ PY
   fi
 fi
 
-# auth.json（deepseek / sensenova API 密钥）：不存在时提示/询问用户
+# auth.json（deepseek / agentrouter / fluxionai API 密钥）：不存在时提示/询问用户
 if [ ! -f "$PI_AGENT_DIR/auth.json" ]; then
   if [ -t 0 ]; then
     echo ""
-    echo "==> auth.json 不存在（含 deepseek / sensenova API 密钥）。"
+    echo "==> auth.json 不存在（含 deepseek / agentrouter / fluxionai API 密钥）。"
     printf "    是否现在手动输入？[y/N] "
     read -r ans
     if [[ "$ans" =~ ^[Yy]$ ]]; then
       printf "    deepseek API key（输入不回显）: "; read -r -s DK; echo ""
-      printf "    sensenova API key（输入不回显）: "; read -r -s SK; echo ""
-      python3 - "$PI_AGENT_DIR/auth.json" "$DK" "$SK" <<'PY'
+      printf "    agentrouter API key（输入不回显）: "; read -r -s AR; echo ""
+      printf "    fluxionai API key（输入不回显）: "; read -r -s FX; echo ""
+      python3 - "$PI_AGENT_DIR/auth.json" "$DK" "$AR" "$FX" <<'PY'
 import json, sys
-p, dk, sk = sys.argv[1], sys.argv[2], sys.argv[3]
+p, dk, ar, fx = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 auth = {}
 if dk: auth["deepseek"] = {"type": "api_key", "key": dk}
-if sk: auth["sensenova"] = {"type": "api_key", "key": sk}
+if ar: auth["agentrouter"] = {"type": "api_key", "key": ar}
+if fx: auth["fluxionai"] = {"type": "api_key", "key": fx}
 open(p, "w", encoding="utf-8").write(json.dumps(auth, ensure_ascii=False, indent=2) + "\n")
 PY
-      unset DK SK
+      unset DK AR FX
       [ -s "$PI_AGENT_DIR/auth.json" ] && echo "  ✅ 已写入 auth.json" || echo "  ⚠ 未输入任何 key，auth.json 未生成"
     else
       echo "  已跳过。还原后请手动补充 auth.json（参考 agent/auth.json.example 或从原电脑复制）。"
@@ -137,6 +139,19 @@ PY
 fi
 
 # ── 5. npm 包重装（需联网）──────────────────────────────────────────────────
+# ── 5. npm 包重装（需联网）──────────────────────────────────────
+# bash-guard 扩展依赖（shell-quote）：node_modules 不随仓库分发，需联网重装
+if [ -f "$PI_AGENT_DIR/extensions/bash-guard/package.json" ]; then
+  echo "==> 安装 bash-guard 扩展依赖（shell-quote）..."
+  if command -v npm >/dev/null 2>&1; then
+    (cd "$PI_AGENT_DIR/extensions/bash-guard" && npm install --omit=dev 2>&1 | tail -2) \
+      && echo "  ✅ bash-guard 扩展依赖已安装" \
+      || echo "  ⚠ bash-guard npm install 失败（需联网）。缺失时 bash-guard 扩展会报 shell-quote 找不到。"
+  else
+    echo "  ⚠ 未找到 npm，跳过 bash-guard 依赖安装（pi 启动后扩展可能报错）。"
+  fi
+fi
+
 if [ -f "$PI_AGENT_DIR/npm/package.json" ]; then
   echo "==> 尝试重装 npm packages（需联网，包清单: $(grep -c ':' "$PI_AGENT_DIR/npm/package.json" || true) 项依赖）..."
   if command -v npm >/dev/null 2>&1; then
