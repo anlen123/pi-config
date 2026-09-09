@@ -1,14 +1,5 @@
 {
-  "deepseek": {
-    "type": "api_key",
-    "key": "REPLACE_WITH_YOUR_DEEPSEEK_API_KEY"
-  },
-  "agentrouter": {
-    "type": "api_key",
-    "key": "REPLACE_WITH_YOUR_AGENTROUTER_API_KEY"
-  },
-  "fluxionai": {
-    "type": "api_key",
-    "key": "REPLACE_WITH_YOUR_FLUXIONAI_API_KEY"
-  }
+  "deepseek": { "type": "api_key", "key": "$PI_DEEPSEEK_API_KEY" },
+  "agentrouter": { "type": "api_key", "key": "$PI_AGENTROUTER_API_KEY" },
+  "fluxionai": { "type": "api_key", "key": "$PI_FLUXIONAI_API_KEY" }
 }

@@ -1,8 +1,8 @@
 {
   "lastChangelogVersion": "0.85.1",
   "theme": "dark",
-  "defaultProvider": "agentrouter",
-  "defaultModel": "glm-5.3",
+  "defaultProvider": "modelflare",
+  "defaultModel": "glm-5.3-flash",
   "defaultThinkingLevel": "high",
   "quietStartup": true,
   "hideThinkingBlock": true,

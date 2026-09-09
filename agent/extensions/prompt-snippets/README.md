@@ -6,7 +6,7 @@ standalone instruction — toggle exactly the ones you want per message.
 
 ## Usage
 
-- Press **alt+s** or run **/snippets** to open the toggle menu.
+- Press **alt+k** or run **/snippets** to open the toggle menu.
   - `up`/`down` to navigate, `space` to toggle, `enter` to apply, `esc` to cancel.
   - `tab` previews the highlighted snippet (name, placement, order, filename,
     and full body; `up`/`down` scroll long bodies). `tab` or `esc` returns to
@@ -20,6 +20,9 @@ standalone instruction — toggle exactly the ones you want per message.
 - When you send a message, active snippet bodies are merged into the message
   text: prepend group (sorted by `order`) → your text → append group (sorted
   by `order`), separated by blank lines.
+- **空回车直接发送**：有激活片段且输入框为空时，直接按 Enter 会发送合并后的
+  片段内容（无需输入任何文字）。编辑器有文字、agent 忙碌或未选任何片段时，
+  Enter 行为不变。
 - Toggles reset to **all off** after each send and at session start.
 
 ## Snippet files

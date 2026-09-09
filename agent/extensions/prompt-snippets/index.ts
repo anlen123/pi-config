@@ -4,7 +4,7 @@
  * Each snippet is a markdown file with frontmatter (name, description,
  * placement, order) stored in the `snippets/` directory next to this file.
  *
- * - Press alt+s or run /snippets to open the toggle menu (space: toggle,
+ * - Press alt+k or run /snippets to open the toggle menu (space: toggle,
  *   tab: preview, enter: apply, esc: cancel). The menu is a bordered,
  *   scrollable view.
  * - Active snippets appear as a widget above the editor, with prepend and
@@ -12,6 +12,9 @@
  * - When a message is sent, active snippet bodies are prepended/appended to
  *   the message text in order (prepend group sorted by `order` first, then
  *   the typed text, then the append group sorted by `order`).
+ * - With snippets active and an empty editor, pressing Enter sends the
+ *   merged snippet content alone (the host normally ignores empty submits,
+ *   so the editor input is hooked to handle this case).
  * - Toggles reset to all-off after each send and at session start.
  */
 
@@ -19,6 +22,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { CustomEditor } from "@earendil-works/pi-coding-agent";
 import { Key, matchesKey, truncateToWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
 interface Snippet {
@@ -34,6 +38,19 @@ interface Snippet {
 const extensionDir = dirname(fileURLToPath(import.meta.url));
 const snippetsDir = join(extensionDir, "snippets");
 const WIDGET_ID = "prompt-snippets";
+
+/**
+ * Fallback editor used only when no other extension has replaced the editor.
+ * Otherwise we monkey-patch the existing editor instead of replacing it, so
+ * editors like powerline's BashModeEditor keep working.
+ */
+class SnippetsFallbackEditor extends CustomEditor {
+	hook: ((data: string) => boolean) | null = null;
+	handleInput(data: string) {
+		if (this.hook?.(data)) return;
+		super.handleInput(data);
+	}
+}
 
 function parseSnippet(filename: string, raw: string): Snippet | null {
 	const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
@@ -105,6 +122,67 @@ export default function (pi: ExtensionAPI) {
 			lines.push(theme.fg("warning", `↓ append: ${appends.map((s) => s.name).join(" · ")}`));
 		}
 		ctx.ui.setWidget(WIDGET_ID, lines);
+	}
+
+	/**
+	 * 空输入回车发送：编辑器为空时，host 对空提交直接 no-op，input 事件
+	 * 不会触发；因此包装现有编辑器，仅在「回车 + 空文本 + 有激活片段 +
+	 * agent 空闲」时发送合并后的片段内容，其余按键全部透传。
+	 */
+	function trySendActiveSnippets(data: string, editor: any, hookCtx: ExtensionContext): boolean {
+		const kb = editor?.keybindings ?? editor?.keybindingsRef;
+		const isSubmit =
+			typeof kb?.matches === "function" ? kb.matches(data, "tui.input.submit") : matchesKey(data, "enter");
+		if (!isSubmit) return false;
+		const active = snippets.filter((s) => enabled.has(s.id));
+		if (active.length === 0) return false;
+		if (editor.getText().trim().length > 0) return false;
+		// agent 忙碌时空回车本来就没有行为，不劫持，也不打断队列语义
+		if (typeof (hookCtx as any).isIdle === "function" && !(hookCtx as any).isIdle()) return false;
+		// snippets 已按 prepend → append 排序，与 input 事件的合并顺序一致
+		const merged = active.map((s) => s.body).join("\n\n");
+		enabled = new Set();
+		try {
+			updateWidget(hookCtx);
+		} catch {
+			// 会话切换后 ctx 可能失效，忽略
+		}
+		void pi.sendUserMessage(merged).catch(() => {});
+		return true;
+	}
+
+	function installEmptyEnter(ctx: ExtensionContext) {
+		if (ctx.mode !== "tui" || !ctx.hasUI) return;
+		const ui = ctx.ui as any;
+		if (typeof ui.setEditorComponent !== "function") return;
+		// 延迟到事件循环尾部：确保 powerline 等扩展已在各自的 session_start
+		// 中安装了自定义编辑器，我们基于当前编辑器挂钩而不是覆盖它。
+		setTimeout(() => {
+			try {
+				const previousFactory = typeof ui.getEditorComponent === "function" ? ui.getEditorComponent() : undefined;
+				const factory = (tui: any, theme: any, keybindings: any) => {
+					const editor: any = previousFactory
+						? previousFactory(tui, theme, keybindings)
+						: new SnippetsFallbackEditor(tui, theme, keybindings);
+					if (editor && typeof editor.handleInput === "function" && !editor.__snippetsEmptyEnterHooked) {
+						editor.__snippetsEmptyEnterHooked = true;
+						const originalHandleInput = editor.handleInput.bind(editor);
+						editor.handleInput = (data: string) => {
+							try {
+								if (trySendActiveSnippets(data, editor, ctx)) return;
+							} catch {
+								// 出错时降级为正常按键处理
+							}
+							originalHandleInput(data);
+						};
+					}
+					return editor;
+				};
+				ui.setEditorComponent(factory);
+			} catch {
+				// 编辑器替换失败时静默降级：回退到原有行为（空回车不发送）
+			}
+		}, 0);
 	}
 
 	async function openMenu(ctx: ExtensionContext) {
@@ -289,6 +367,7 @@ export default function (pi: ExtensionAPI) {
 		snippets = loadSnippets();
 		if (!existsSync(snippetsDir)) mkdirSync(snippetsDir, { recursive: true });
 		updateWidget(ctx);
+		installEmptyEnter(ctx);
 	});
 
 	pi.on("input", async (event, ctx) => {

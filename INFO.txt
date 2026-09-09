@@ -1,25 +1,29 @@
 Pi 配置备份
 =====================================
-备份时间 : 2026-09-09 15:10:00
+备份时间 : 2026-09-10 01:10:00
 源平台   : Linux x86_64 (WSL2)
 pi 版本  : 0.85.1
-MCP 配置 : 1 个文件（mcp/agent-mcp.json，高德 amap，key 已脱敏为 {env:AMAP_MCP_KEY} 占位符）
+MCP 配置 : 1 个文件（mcp/agent-mcp.json，高德 amap，key 已脱敏为 ${PI_AMAP_MCP_KEY} 占位符）
 node_modules : 未包含(还原时联网重装)
 
-本次更新要点（相对 2026-09-09 13:30 版）:
-- extensions/ 新增 4 个: bash-guard（目录型，依赖 shell-quote，还原脚本自动 npm install）/
-  prompt-snippets（目录型，含 6 个提示词片段）/ live-thinking.ts（流式实时思考展示+历史折叠，
-  配合 hideThinkingBlock: true）/ question.ts（带选项的提问工具，自定义 TUI）
-- skills/ 新增 1 个: analyze-sessions（会话分析：成本/搜索/展示，13 个目录）
-- settings.json: hideThinkingBlock 确认为 true（配合 live-thinking 扩展）
-- trust.json: 新增信任 /root/tt
-- .gitignore: 新增 agent/extensions/*/node_modules/ 与 __pycache__/ 规则
-- restore.sh / restore.ps1: 新增 bash-guard 依赖安装；auth.json 交互提示由过时的
-  sensenova 更正为 agentrouter / fluxionai（与 auth.json.example 一致）
-- 高德 amap MCP 已恢复到本机 live 环境（~/.pi/agent/mcp.json，真实 key 从
-  langfuse_github 项目配置提取），仓库中保持脱敏占位符不变
+本次更新要点（相对 2026-09-09 15:10 版）:
+- 密钥机制升级: models.json（suixiang/agentrouter/modelflare）、auth.json（deepseek/
+  fluxionai）、mcp.json（高德）全部改为 $PI_*_API_KEY / ${PI_AMAP_MCP_KEY} 环境变量引用；
+  密钥唯一存放点为各机器 ~/.pi/secrets/pi-secrets.env（600，不入库），还原时由
+  restore.sh 交互输入
+- restore.sh 重写: 新增交互合并模式（本地 vs 仓库逐文件对比，A=远程为主 / B=本地为主 /
+  C=融合逐块挑选冲突，python3 实现）；--fresh 保留旧覆盖行为；短输入误操作防护；
+  非交互终端自动降级
+- extensions/ 归档 3 项到 extensions-disabled/（pi 不加载）: model-info-footer.ts
+  （与 pi-powerline-footer 重复）、dedupe-status.ts（desktop-ui 已卸载）、mcp/
+  （旧版本地客户端，由 pi-mcp-adapter 接管），附恢复说明 README
+- prompt-snippets 增强: 新增 continue-task.md 片段（继续被中断的任务）；插件支持
+  空输入回车直接发送激活片段（与 powerline 自定义编辑器兼容）
+- llm-wiki: 移除 youtube-transcript 外挂依赖，YouTube 改为手动粘贴模式（5 处引用同步更新）
+- 默认模型切换为 modelflare/glm-5.3-flash；@narumitw/pi-btw 升级 0.58.1
+- .gitignore: 新增 agent/live-thinking.json、agent/deepseek-*.json（运行时文件）
 
 维持不变:
-- models.json: 保持 ${SUIXIANG_API_KEY} / ${ZHIPUAI_API_KEY} 环境变量插值脱敏
+- settings.json 主体 / AGENTS.md / keybindings.json / trust.json
 - models-store.json / fff 数据库: 跳过运行时数据更新
-- auth.json.example: 保持仓库现有版本（比 live 新）
+- auth.json.example: $PI_*_API_KEY 引用模板

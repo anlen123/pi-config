@@ -2,7 +2,7 @@
   "mcpServers": {
     "amap-maps-streamableHTTP": {
       "type": "http",
-      "url": "https://mcp.amap.com/mcp?key={env:AMAP_MCP_KEY}"
+      "url": "https://mcp.amap.com/mcp?key=${PI_AMAP_MCP_KEY}"
     }
   }
 }

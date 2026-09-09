@@ -17,3 +17,7 @@ agent/npm/node_modules/
 # 扩展依赖（还原时重装）
 agent/extensions/*/node_modules/
 __pycache__/
+
+# 运行时状态（本地生成）
+agent/live-thinking.json
+agent/deepseek-*.json

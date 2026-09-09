@@ -69,7 +69,6 @@ bash ${SKILL_DIR}/install.sh --platform <当前平台> --with-optional-adapters
 可选依赖 skill / 工具：
 - `baoyu-url-to-markdown` — 普通网页、X/Twitter、部分知乎提取
 - `wechat-article-to-markdown` — 微信公众号提取
-- `youtube-transcript` — YouTube 字幕提取
 
 即使这些依赖缺失，skill 仍可工作（用户可以直接提供本地文件、粘贴文本，或改走手动入口）。
 
@@ -305,7 +304,6 @@ bash ${SKILL_DIR}/scripts/adapter-state.sh classify-run <source_id> <exit_code> 
 
 - 如果 `source_category=manual_only` → 不调用外挂，直接使用 `fallback_hint`
 - 如果 `adapter_name=wechat-article-to-markdown` → 执行 `wechat-article-to-markdown "<URL>"`
-- 如果 `adapter_name=youtube-transcript` → 调用 `youtube-transcript`
 - 如果 `adapter_name=baoyu-url-to-markdown` → 调用 `baoyu-url-to-markdown`
 
 **本地文件**：

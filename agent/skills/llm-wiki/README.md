@@ -255,8 +255,7 @@ Windows 上 Python 通常安装为 `python.exe` 而非 `python3.exe`（Microsoft
 
 - **[Andrej Karpathy](https://karpathy.ai/)** — [llm-wiki gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)，核心方法论来源
 - **[baoyu-url-to-markdown](https://github.com/JimLiu/baoyu-skills#baoyu-url-to-markdown)** by [JimLiu](https://github.com/JimLiu) — 网页、X/Twitter 内容提取
-- **youtube-transcript** — YouTube 字幕提取
-- **[wechat-article-to-markdown](https://github.com/jackwener/wechat-article-to-markdown)** — 微信公众号文章提取
+- `wechat-article-to-markdown` — 微信公众号文章提取
 
 ## License
 

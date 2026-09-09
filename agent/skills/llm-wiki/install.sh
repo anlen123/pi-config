@@ -404,9 +404,9 @@ check_environment() {
   echo ""
 
   if command -v uv >/dev/null 2>&1; then
-    ok "uv 已安装（可安装 wechat-article-to-markdown，并运行 youtube-transcript）"
+    ok "uv 已安装（可安装 wechat-article-to-markdown）"
   else
-    warn "未找到 uv。wechat-article-to-markdown 和 youtube-transcript 需要 uv"
+    warn "未找到 uv。wechat-article-to-markdown 需要 uv"
     echo "  可用 Homebrew 安装：brew install uv"
   fi
 

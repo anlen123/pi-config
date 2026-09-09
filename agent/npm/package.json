@@ -6,7 +6,7 @@
     "@hhyy668/pi-ai": "^0.80.7",
     "@hhyy668/pi-coding-agent": "^0.80.7",
     "@hhyy668/pi-tui": "^0.80.7",
-    "@narumitw/pi-btw": "^0.58.0",
+    "@narumitw/pi-btw": "^0.58.1",
     "@narumitw/pi-goal": "^0.54.4",
     "pi-cache-optimizer": "^2.8.7",
     "pi-mcp-adapter": "^2.32.1",

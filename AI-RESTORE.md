@@ -146,7 +146,7 @@ Copy-Item "$env:USERPROFILE\pi-config\agent\*" "$env:USERPROFILE\.pi\agent" -Rec
 | 路径（相对 `PI_AGENT`） | 说明 |
 |---|---|
 | `settings.json` | 全局设置（含 11 个 packages） |
-| `models.json` | 自定义 provider/model（suixiang/zhipuai 的 apiKey 为环境变量插值，见步骤 7） |
+| `models.json` | 自定义 provider/model（apiKey 为 `$PI_*_API_KEY` 环境变量引用，见步骤 7） |
 | `models-store.json` | 模型存储 |
 | `AGENTS.md` | 全局沟通规则（中文） |
 | `keybindings.json` / `trust.json` / `pi-fff.json` | 快捷键 / 项目信任 / fff 设置 |
@@ -214,76 +214,59 @@ if (Test-Path "$env:USERPROFILE\pi-config\mcp\agent-mcp.json") {
 
 - 仓库里有 `mcp/agent-mcp.json`（高德地图 amap 配置，key 为 `{env:AMAP_MCP_KEY}` 占位符）：
   还原后确认 `PI_AGENT/mcp.json` 存在且为合法 JSON。
-- `mcp.json` 中的占位符 `{env:AMAP_MCP_KEY}` 无需手工替换：设置好环境变量后，pi 运行时自动展开（步骤 7 处理）。
+- `mcp.json` 中的占位符 `${PI_AMAP_MCP_KEY}` 无需手工替换：设置好环境变量后，pi 运行时自动展开（步骤 7 处理）。
 - 仓库里没有 `mcp/` 文件时：跳过并在报告中注明「当前无 MCP 服务器配置」。
 
 ---
 
-## 7. API 密钥（auth.json）— 需要用户参与 ⚠️
+## 7. API 密钥 — 需要用户参与 ⚠️
 
 **密钥不在仓库中**（安全设计）。**本步骤在还原完成后立即执行：必须停下来提示用户手动输入/提供密钥，不得静默跳过。**
 
-- 若用户是用 `restore.sh` / `restore.ps1` 还原的：脚本已内置交互询问（高德 Web服务 key + auth.json 密钥），用户已在终端输入过。AI 只需**验证结果**（见下方「步骤 7 验证」），无需重复询问。
+- 若用户是用 `restore.sh` / `restore.ps1` 还原的：脚本已内置交互询问，密钥已写入 `~/.pi/secrets/pi-secrets.env`（600 权限）。AI 只需**验证结果**（见下方「步骤 7 验证」），无需重复询问。
 - 若用户是通过 AI 本清单还原的：AI 必须主动提示用户输入以下密钥，并严格按 7.1 / 7.2 处理。
 
-### 7.1 API 密钥（auth.json）— 需要用户参与
+### 7.1 供应商密钥 → `~/.pi/secrets/pi-secrets.env`
 
-**密钥不在仓库中**（安全设计）。此步骤必须停下询问用户，二选一：
+**密钥不在仓库中**。所有配置文件只引用环境变量，密钥统一存放在 `~/.pi/secrets/pi-secrets.env`：
 
-**选项 A：用户有原电脑的密钥文件**
-让用户提供原 `~/.pi/agent/auth.json` 的路径（或把文件内容放到当前机器的临时位置），然后：
+| 变量 | 用途 | 引用处 |
+|---|---|---|
+| `PI_SUIXIANG_API_KEY` | suixiang | `models.json` |
+| `PI_AGENTROUTER_API_KEY` | agentrouter | `models.json` |
+| `PI_MODELFLARE_API_KEY` | modelflare | `models.json` |
+| `PI_DEEPSEEK_API_KEY` | deepseek 官方 | `auth.json` |
+| `PI_FLUXIONAI_API_KEY` | fluxionai | `auth.json` |
+| `PI_AMAP_MCP_KEY` | 高德地图 MCP | `mcp.json` |
 
-```bash
-# Linux：用户提供路径 $KEY_SRC
-cp "$KEY_SRC" "$HOME/.pi/agent/auth.json"
-```
-```powershell
-# Windows
-Copy-Item "$KEY_SRC" "$env:USERPROFILE\.pi\agent\auth.json"
-```
-
-**选项 B：用户手动填写（没有原文件时）**
-告知用户：编辑 `$HOME/.pi/agent/auth.json`（Windows: `$env:USERPROFILE\.pi\agent\auth.json`），
-格式参考仓库中的 `agent/auth.json.example`：
-```json
-{
-  "deepseek": { "type": "api_key", "key": "sk-你的deepseek密钥" },
-  "agentrouter": { "type": "api_key", "key": "你的agentrouter密钥" },
-  "fluxionai": { "type": "api_key", "key": "你的fluxionai密钥" }
-}
-```
-
-另外 `models.json` 中 suixiang / zhipuai 的 `apiKey` 是环境变量插值占位符，需要设置
-`SUIXIANG_API_KEY` / `ZHIPUAI_API_KEY` 环境变量（pi 运行时自动展开），或手动替换为真实 key。
-**AI 不得代替用户猜测密钥**；用户填写完成后，AI 再验证。
-
-### 7.2 高德 MCP key（`AMAP_MCP_KEY`）— 同样需要用户参与 ⚠️
-
-`mcp/agent-mcp.json` 中的 URL 含占位符 `{env:AMAP_MCP_KEY}`（仓库 public，未存明文 key）。**此步骤必须停下询问用户**，二选一：
-
-**选项 A：设置环境变量（推荐，免改文件）**
+AI 引导用户创建（密钥值由用户输入，**AI 不得猜测/打印**）：
 
 ```bash
-# Linux：写入 ~/.bashrc 或 ~/.zshrc 后 source
-export AMAP_MCP_KEY="你的高德Web服务key"
+mkdir -p ~/.pi/secrets && chmod 700 ~/.pi/secrets
+nano ~/.pi/secrets/pi-secrets.env   # 内容为若干行: export PI_XXX_API_KEY=... 
+chmod 600 ~/.pi/secrets/pi-secrets.env
 ```
-```powershell
-# Windows（PowerShell）
-setx AMAP_MCP_KEY "你的高德Web服务key"
-```
-pi 运行时（pi-mcp-adapter）会自动把 `{env:AMAP_MCP_KEY}` 展开为环境变量值。**AI 不得把 key 输出到日志/报告**。
 
-**选项 B：直接替换文件**（用户手动编辑，或用户提供 key 后由 AI 用安全方式写入）：
+并确保 shell 启动时自动加载（追加到 `~/.zshrc` 与 `~/.bashrc`，若尚无）：
 
-把 `PI_AGENT/mcp.json`（即还原后的 `mcp/agent-mcp.json`）中的 `{env:AMAP_MCP_KEY}` 替换为真实 key，得到：
-```json
-"url": "https://mcp.amap.com/mcp?key=你的真实key"
+```bash
+if [ -f "$HOME/.pi/secrets/pi-secrets.env" ]; then
+  . "$HOME/.pi/secrets/pi-secrets.env"
+fi
 ```
+
+`auth.json` 与 `models.json` 保持仓库中的 `$PI_*_API_KEY` 引用样式即可，**不要写入明文**。
+（若用户 `/login` 重新登录，pi 会把明文写回 `auth.json`，属 pi 正常行为，文件权限应为 600。）
+
+### 7.2 高德 MCP key（`PI_AMAP_MCP_KEY`）— 同样需要用户参与 ⚠️
+
+`mcp.json` 的 URL 含 `${PI_AMAP_MCP_KEY}` 占位符。按 7.1 的方式把 key 写入 `pi-secrets.env`（`export PI_AMAP_MCP_KEY=...`）即可，pi 运行时自动展开。**AI 不得把 key 输出到日志/报告**。
 
 ### ✅ 步骤 7 验证
 
-- `auth.json` 存在且是合法 JSON，包含 `deepseek` 字段（或用户明确表示暂不配置密钥，此时在报告中注明，pi 仍可启动，只是默认 provider 不可用）。
-- MCP：`AMAP_MCP_KEY` 已设置（`echo ${AMAP_MCP_KEY:+set}` 输出 `set`），或 `mcp.json` 中已无 `{env:AMAP_MCP_KEY}` 占位符。若用户暂不提供 key：保留占位符并在报告中注明（amap 工具不可用，其余功能正常）。
+- `~/.pi/secrets/pi-secrets.env` 存在、权限 600、包含需要的 `export PI_*` 行；shell 新开终端后 `echo ${PI_SUIXIANG_API_KEY:+set}` 输出 `set`。
+- `auth.json` / `models.json` / `mcp.json` 中无明文密钥（`grep -R 'sk-' ~/.pi/agent/*.json` 应无结果或仅命中 pi 自身缓存）。
+- 若用户暂不提供某密钥：保留 `$VAR` 引用并在报告中注明对应模型不可用，其余功能正常。
 
 ---
 
@@ -324,7 +307,8 @@ ls "$HOME/.pi/agent/settings.json" "$HOME/.pi/agent/models.json" "$HOME/.pi/agen
 find "$HOME/.pi/agent/skills" -maxdepth 1 -type d | wc -l   # 应 >= 13
 ls "$HOME/.pi/agent/extensions/"                              # 8 个 ts 文件 + bash-guard/ + prompt-snippets/ + mcp/ 目录
 cat "$HOME/.pi/agent/settings.json" | python3 -m json.tool >/dev/null && echo "settings.json 合法 JSON"
-[ -f "$HOME/.pi/agent/auth.json" ] && echo "auth.json 存在" || echo "⚠ auth.json 缺失（用户未提供密钥）"
+[ -f "$HOME/.pi/agent/auth.json" ] && echo "auth.json 存在" || echo "⚠ auth.json 缺失（可从 example 生成）"
+[ -f "$HOME/.pi/secrets/pi-secrets.env" ] && echo "pi-secrets.env 存在" || echo "⚠ pi-secrets.env 缺失（用户未配置密钥）"
 [ -f "$HOME/.pi/agent/mcp.json" ] && cat "$HOME/.pi/agent/mcp.json" | python3 -m json.tool >/dev/null && echo "mcp.json 存在且合法"
 pi --version
 ```
@@ -370,7 +354,7 @@ pi --version
 | 用户机器是 Linux ARM（如树莓派） | bin/ 已删除，提示 pi 会获取对应架构的 fd/rg |
 | 还原后扩展报错 | 检查 `extensions/` 文件是否完整 → 报告错误信息，不擅自改代码 |
 | 还原后 pi 报 ENOENT（`no such file or directory ... sessions/...jsonl`） | 原因：备份时把运行中的 pi 正在写入的 `sessions/` 目录 mv 走了，pi 按原路径追加会话日志失败。**旧会话文件并没有丢**，在 `.bak-*/sessions/` 里。处理：`mkdir -p ~/.pi/agent && mv ~/.pi/agent.bak-*/sessions ~/.pi/agent/`（把会话目录移回原位即可，无需重跑还原）。备份逻辑已更新为保留 sessions/ 在原位，新还原不会再出现此问题。 |
-| 用户无任何密钥 | 明确告知：pi 可启动，但默认 provider（deepseek）无法调用，需用户补 auth.json |
+| 用户无任何密钥 | 明确告知：pi 可启动，但对应 provider 无法调用；按步骤 7.1 引导用户把密钥写入 ~/.pi/secrets/pi-secrets.env 后重启 shell |
 
 ## 附录 B：更新已有还原（原机器配置变更后）
 

@@ -3,7 +3,55 @@
 [pi](https://github.com/badlogic/pi-mono/) 编码助手的便携配置备份仓库。
 包含全局设置、插件（extensions）、Skills、MCP 配置，可在新电脑上快速还原环境。
 
-## 🚀 AI 自动还原（推荐）
+## 🔄 两种还原模式
+
+```bash
+bash restore.sh            # 交互合并模式（默认）
+bash restore.sh --fresh    # 全新覆盖模式
+```
+
+### 交互合并模式（默认）
+
+逐文件对比 **本地 `~/.pi/agent`** 与 **本仓库**，只处理有差异的文件：
+
+| 选项 | 行为 |
+|---|---|
+| **A** | 以**远程（仓库）为主**：覆盖本地（本地旧版自动备份到 `~/.pi/agent.merge-bak-<时间戳>/`） |
+| **B** | 以**本地为主**：保留本地不动 |
+| **C** | **两者融合**：逐个差异块列出 `本地 vs 仓库` 内容，由你逐块挑选（1=保留本地 / 2=采用仓库 / 3=两者都要）；也可对单文件剩余冲突一键 `s=全用本地` 或 `a=全用仓库` |
+
+- 本地有、仓库没有的文件**一律保留**，绝不删除
+- 仅仓库有的文件会询问是否安装
+- 二进制文件（如 fff 索引）只支持 A/B
+- 非交互终端（如 CI 管道）自动降级为"仅安装缺失文件，差异保留本地"
+
+### 全新覆盖模式（`--fresh`）
+
+旧行为：把现有 `~/.pi/agent` 整体备份到 `~/.pi/agent.bak-<时间戳>` 后用仓库版本替换
+（`sessions/` 始终保留在原位，避免运行中的 pi 写会话报 ENOENT）。
+
+## 🔑 模型供应商密钥：手动输入，绝不入库
+
+两种模式的还原脚本最后都会**逐项询问密钥**（本地输入、不回显），写入：
+
+```
+~/.pi/secrets/pi-secrets.env   # 目录 700 / 文件 600，被 shell 启动时自动 source
+```
+
+| 变量 | 用途 | 被引用于 |
+|---|---|---|
+| `PI_SUIXIANG_API_KEY` | suixiang（sui-xiang.com） | `models.json` |
+| `PI_AGENTROUTER_API_KEY` | agentrouter（agentrouter.org） | `models.json` |
+| `PI_MODELFLARE_API_KEY` | modelflare（modelflare.dev） | `models.json` |
+| `PI_DEEPSEEK_API_KEY` | deepseek 官方 API | `auth.json` |
+| `PI_FLUXIONAI_API_KEY` | fluxionai | `auth.json` |
+| `PI_AMAP_MCP_KEY` | 高德地图 MCP | `mcp.json` |
+
+- 配置文件里只保存 `$PI_*_API_KEY` / `${PI_AMAP_MCP_KEY}` **环境变量引用**（pi 原生支持，缺失时对应模型不可用），仓库中无任何明文密钥
+- 已配置的密钥回车即跳过；输入新值则覆盖（<16 字符的疑似误输入需二次确认）
+- **轮换密钥**：编辑 `pi-secrets.env` 对应行 → 重启 shell/pi；旧 Key 请到对应供应商后台吊销
+
+## 🚀 AI 自动还原
 
 在新机器上安装好 pi 后，启动 pi 并对它说：
 
@@ -18,27 +66,31 @@ pi（或任意带终端工具的 AI）会按 [AI-RESTORE.md](AI-RESTORE.md) 自�
 ## 内容结构
 
 ```
-├── agent/                  # = ~/.pi/agent 核心目录
-│   ├── settings.json       # 全局设置（主题、默认模型、packages 列表）
-│   ├── models.json         # 自定义 provider / model 配置
-│   ├── models-store.json
-│   ├── AGENTS.md           # 全局沟通规则
-│   ├── keybindings.json    # 自定义快捷键
-│   ├── trust.json          # 项目信任列表
-│   ├── pi-fff.json         # fff 设置
-│   ├── extensions/         # 本地插件（model-info-footer、context-progress-bar、dedupe-status、deepseek-balance、deepseek-peak-status、herdr-agent-state、live-thinking、question、bash-guard、prompt-snippets、MCP 客户端）
-│   ├── skills/             # 全部 Skills（13 个目录）
-│   ├── npm/                # npm 包清单（还原时联网重装 node_modules）
-│   ├── git/                # git 方式安装的包（pi-ocr-tool）
-│   ├── fff/                # 文件访问频率索引
-│   └── bin/                # fd/rg 二进制（Linux-x86_64，其他平台还原时自动清理）
-│   │                       # 高德地图 MCP（key 脱敏，见下方说明）
-├── mcp/                    # MCP 服务器配置（按原路径还原）
-│   └── agent-mcp.json      # → ~/.pi/agent/mcp.json（amap 高德地图）
-├── AI-RESTORE.md           # ⭐ AI 执行清单（还原时优先让 AI 读这个）
-├── restore.sh              # Linux/macOS 还原脚本（人工/脚本方式）
-├── restore.ps1             # Windows 还原脚本
-└── INFO.txt                # 备份信息
+├── agent/                     # = ~/.pi/agent 核心目录
+│   ├── settings.json          # 全局设置（主题、默认模型、packages 列表）
+│   ├── models.json            # 自定义 provider/model（密钥为 $PI_*_API_KEY 引用）
+│   ├── AGENTS.md              # 全局沟通规则
+│   ├── keybindings.json       # 自定义快捷键
+│   ├── auth.json.example      # auth.json 模板（$PI_*_API_KEY 引用）
+│   ├── trust.json             # 项目信任列表
+│   ├── pi-fff.json            # fff 设置
+│   ├── extensions/            # 本地插件（bash-guard、context-progress-bar、
+│   │                          #   deepseek-balance、deepseek-peak-status、
+│   │                          #   herdr-agent-state、live-thinking、
+│   │                          #   prompt-snippets、question）
+│   ├── extensions-disabled/   # 已归档插件（model-info-footer、dedupe-status、
+│   │                          #   旧版 mcp 客户端；pi 不加载，含恢复说明）
+│   ├── skills/                # 全部 Skills
+│   ├── npm/                   # npm 包清单（还原时联网重装 node_modules）
+│   ├── git/                   # git 方式安装的包（pi-ocr-tool）
+│   ├── fff/                   # 文件访问频率索引
+│   └── bin/                   # fd/rg 二进制（Linux-x86_64，其他平台还原时自动清理）
+├── mcp/
+│   └── agent-mcp.json         # → ~/.pi/agent/mcp.json（高德地图，${PI_AMAP_MCP_KEY} 引用）
+├── AI-RESTORE.md              # ⭐ AI 执行清单（还原时优先让 AI 读这个）
+├── restore.sh                 # Linux/macOS 还原脚本（交互合并 / --fresh）
+├── restore.ps1                # Windows 还原脚本
+└── INFO.txt                   # 备份信息
 ```
 
 ## 还原步骤（新电脑）
@@ -52,86 +104,40 @@ git clone git@github.com:anlen123/pi-config.git
 cd pi-config
 
 # 3. 还原（Linux/macOS）
-bash restore.sh
+bash restore.sh            # 交互合并（对比本地与仓库，A/B/C 选择）
+# bash restore.sh --fresh  # 或全新覆盖
 # Windows: powershell -ExecutionPolicy Bypass -File .\restore.ps1
 
-# 4. 启动（首次启动自动安装 settings.json 中声明的 packages）
+# 4. 按脚本提示输入各供应商密钥（或之后编辑 ~/.pi/secrets/pi-secrets.env）
+
+# 5. 启动（首次启动自动安装 settings.json 中声明的 packages）
 pi
 ```
 
-还原脚本会自动备份旧配置到 `~/.pi/agent.bak-<时间戳>`，并清理平台不兼容的二进制。
-若存在 `extensions/bash-guard/`，还原脚本会额外联网安装其依赖（shell-quote）。
+还原脚本会自动联网安装 bash-guard 依赖（shell-quote）和 npm 包清单依赖。
 
-**还原过程中会提示输入密钥**（均为本地输入、不回显）：高德 Web服务 key（写入 mcp.json）、
-deepseek / agentrouter / fluxionai API key（生成 auth.json）。也可以提前设置 `AMAP_MCP_KEY` 环境变量
-自动注入；都不想做就选 N，还原后手动补充（见下方说明）。
+## 📝 更新日志
+
+### 2026-09-10
+
+- **restore.sh 重写**：新增交互合并模式（本地 vs 远程逐文件对比，A=远程为主 / B=本地为主 / C=融合逐块挑选冲突）；密钥改为手动输入并写入 `~/.pi/secrets/pi-secrets.env`（600 权限）；`--fresh` 保留旧覆盖行为；加入短输入误操作防护
+- **密钥机制升级**：`models.json`（suixiang/agentrouter/modelflare）、`auth.json`（deepseek/fluxionai）、`mcp.json`（高德）全部改为 `$PI_*_API_KEY` / `${PI_AMAP_MCP_KEY}` 环境变量引用，仓库与本地配置均无明文密钥
+- **prompt-snippets 增强**：
+  - 新增 `continue-task.md` 片段（继续被中断的任务：先恢复上下文、核对进度，再从中断处继续）
+  - 修改插件支持**空输入回车直接发送**：有激活片段且输入框为空时，直接 Enter 发送合并后的片段内容（编辑器为空时宿主会忽略提交，因此插件对编辑器做了挂钩，与 powerline 的自定义编辑器兼容）
+- **插件归档**：`model-info-footer`（与 pi-powerline-footer 重复）、`dedupe-status`（desktop-ui 已卸载）、旧版本地 `mcp` 客户端（由 pi-mcp-adapter 接管）移入 `extensions-disabled/`，pi 不再加载
+- **llm-wiki**：移除 `youtube-transcript` 外挂依赖，YouTube 来源改为手动粘贴模式（相关引用同步更新 5 个文件）
+- 默认模型切换为 `modelflare/glm-5.3-flash`；`@narumitw/pi-btw` 升级至 0.58.1
+
+### 更早
+
+见 `git log`。
 
 ## ⚠️ 重要说明
 
-### auth.json（API 密钥）不在此仓库中
+### 本仓库不含任何密钥（public 仓库）
 
-出于安全考虑（本仓库是 **public**），`agent/auth.json`（含 deepseek / agentrouter /
-fluxionai API 密钥）**未上传**。还原后需要手动补上，二选一：
-
-- **方式 A**：从原电脑 `~/.pi/agent/auth.json` 复制到新电脑相同位置
-- **方式 B**：直接编辑新电脑的 `~/.pi/agent/auth.json`，格式参考
-  `agent/auth.json.example`（本仓库提供模板）
-
-### models.json 中的 provider 密钥已脱敏
-
-`agent/models.json` 中 suixiang / zhipuai 两个 provider 的 `apiKey` 已替换为
-环境变量插值（pi 原生支持 `$VAR` / `${VAR}` 语法，运行时自动展开）：
-
-```bash
-export SUIXIANG_API_KEY="你的 suixiang key"
-export ZHIPUAI_API_KEY="你的智谱 key"
-```
-
-或直接把 `models.json` 中的 `${SUIXIANG_API_KEY}` / `${ZHIPUAI_API_KEY}`
-替换为真实 key（勿提交回本仓库）。
-
-### 会话历史（sessions/）不在仓库中
-
-对话历史含隐私内容，未上传。完整离线备份请使用本地 ZIP
-（见下方「本地完整备份」），新电脑上还原后再把 sessions/ 拷入即可。
-
-### 高德 MCP 的 API key 不在仓库中
-
-`mcp/agent-mcp.json` 里的高德地图 MCP 配置，URL 内嵌的 API key 已脱敏为
-`{env:AMAP_MCP_KEY}` 占位符（仓库 public，明文提交会泄露 key）。还原后二选一：
-
-- **方式 A（推荐，免改文件）**：设置环境变量即可，pi 运行时自动展开：
-  ```bash
-  # Linux/macOS（写入 ~/.bashrc 或 ~/.zshrc 持久化）
-  export AMAP_MCP_KEY="你的高德Web服务key"
-  # Windows（PowerShell）
-  setx AMAP_MCP_KEY "你的高德Web服务key"
-  ```
-- **方式 B**：直接把 `~/.pi/agent/mcp.json` 中的 `{env:AMAP_MCP_KEY}` 替换为真实 key。
-
-> 也可用 restore 脚本还原：设置好 `AMAP_MCP_KEY` 环境变量后再执行 restore.sh / restore.ps1，
-> 脚本会自动把占位符替换为真实 key 写入目标文件。
-> 原电脑上的真实配置在 `~/.pi/agent/mcp.json`（含 key，勿提交到仓库）。
-
-### 更新备份
-
-原电脑上修改配置后，重新打包并推送：
-
-```bash
-# 在 ~/pi-backup/ 下重新生成 ZIP
-./make-backup.sh
-
-# 更新本仓库（注意：默认不含 auth.json 和 sessions/）
-git add -A && git commit -m "update backup" && git push
-```
-
-## 本地完整备份（含密钥）
-
-完整备份（含 auth.json、sessions/）请使用本地工具：
-
-```bash
-~/pi-backup/make-backup.sh            # 默认备份
-~/pi-backup/make-backup.sh --include-node-modules   # 含离线依赖
-```
-
-产物为 `~/pi-backup/pi-portable-<时间戳>.zip`，请妥善保管（含明文密钥）。
+- `agent/auth.json` 被 `.gitignore` 排除；仓库提供 `auth.json.example` 模板（`$PI_*_API_KEY` 引用）
+- `models.json` / `mcp.json` 中只有环境变量引用，无明文
+- 密钥唯一存放点：各机器本地的 `~/.pi/secrets/pi-secrets.env`（600 权限，不入库）
+- 若用 `/login` 重新登录某供应商，pi 会把新 Key 写回 `auth.json`（本地 600 文件，属正常行为）

@@ -4,7 +4,7 @@ local_document	Markdown/文本/HTML	core_builtin	file	file_ext:.md,.txt,.html	ra
 plain_text	纯文本粘贴	core_builtin	text	text:inline	raw/notes	-	-	none	直接粘贴正文即可进入主线
 x_twitter	X/Twitter	optional_adapter	url	url_host:x.com,twitter.com	raw/tweets	baoyu-url-to-markdown	baoyu-url-to-markdown	bundled	自动提取失败时，改为复制全文粘贴
 wechat_article	微信公众号	optional_adapter	url	url_host:mp.weixin.qq.com	raw/wechat	wechat-article-to-markdown	wechat-article-to-markdown	install_time	自动提取失败时，在浏览器打开后复制全文粘贴
-youtube_video	YouTube	optional_adapter	url	url_host:youtube.com,youtu.be	raw/articles	youtube-transcript	youtube-transcript	bundled	自动提取失败时，提供字幕文件或手动粘贴文本
+youtube_video	YouTube	manual_only	url	url_host:youtube.com,youtu.be	raw/articles	-	-	none	自动提取适配器已移除，请提供字幕文件或直接粘贴文本
 zhihu_article	知乎	optional_adapter	url	url_host:zhihu.com	raw/zhihu	baoyu-url-to-markdown	baoyu-url-to-markdown	bundled	自动提取失败时，改为复制全文粘贴
 xiaohongshu_post	小红书	manual_only	url	url_host:xiaohongshu.com,xhslink.com	raw/xiaohongshu	-	-	none	请先从 App 或网页复制内容，再粘贴进来
 web_article	网页文章	optional_adapter	url	url_host:*	raw/articles	baoyu-url-to-markdown	baoyu-url-to-markdown	bundled	自动提取失败时，改为复制全文或保存为本地文件后继续
