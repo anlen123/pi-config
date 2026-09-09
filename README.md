@@ -77,7 +77,7 @@ pi（或任意带终端工具的 AI）会按 [AI-RESTORE.md](AI-RESTORE.md) 自�
 │   ├── extensions/            # 本地插件（bash-guard、context-progress-bar、
 │   │                          #   deepseek-balance、deepseek-peak-status、
 │   │                          #   herdr-agent-state、live-thinking、
-│   │                          #   prompt-snippets、question）
+│   │                          #   prompt-snippets、check-model、question）
 │   ├── extensions-disabled/   # 已归档插件（model-info-footer、dedupe-status、
 │   │                          #   旧版 mcp 客户端；pi 不加载，含恢复说明）
 │   ├── skills/                # 全部 Skills

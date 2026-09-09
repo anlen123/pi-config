@@ -25,6 +25,9 @@ standalone instruction — toggle exactly the ones you want per message.
   Enter 行为不变。
 - Toggles reset to **all off** after each send and at session start.
 
+Included snippets also cover continuing interrupted work, provider onboarding, verification-first workflows, and orchestration.
+The **增加模型供应商** snippet instructs the agent to request missing `baseUrl`/API key values, verify the provider and at least one model before writing `models.json`, and avoid adding a provider when every model check fails.
+
 ## Snippet files
 
 Snippets live in `snippets/` next to `index.ts` — one markdown file each,
