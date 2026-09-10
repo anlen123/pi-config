@@ -1,5 +1,6 @@
 {
   "deepseek": { "type": "api_key", "key": "$PI_DEEPSEEK_API_KEY" },
   "agentrouter": { "type": "api_key", "key": "$PI_AGENTROUTER_API_KEY" },
-  "fluxionai": { "type": "api_key", "key": "$PI_FLUXIONAI_API_KEY" }
+  "fluxionai": { "type": "api_key", "key": "$PI_FLUXIONAI_API_KEY" },
+  "zhiji": { "type": "api_key", "key": "$PI_ZHIJI_API_KEY" }
 }

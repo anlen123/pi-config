@@ -574,6 +574,67 @@
           "maxTokens": 32768
         }
       ]
+    },
+    "zhiji": {
+      "name": "智己 API",
+      "baseUrl": "https://api.zhiji.pro/v1",
+      "api": "openai-completions",
+      "compat": {
+        "supportsStore": false,
+        "sendSessionAffinityHeaders": true
+      },
+      "models": [
+        {
+          "id": "gpt-5.6-sol",
+          "name": "GPT-5.6 Sol (智己)",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "name": "GPT-5.6 Terra (智己)",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.5",
+          "name": "GPT-5.5 (智己)",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 400000,
+          "maxTokens": 128000,
+          "thinkingLevelMap": {
+            "max": null
+          }
+        },
+        {
+          "id": "gpt-5.4",
+          "name": "GPT-5.4 (智己)",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 400000,
+          "maxTokens": 128000,
+          "thinkingLevelMap": {
+            "max": null
+          }
+        }
+      ]
     }
   }
 }

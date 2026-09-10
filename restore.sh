@@ -94,6 +94,7 @@ input_all_keys() {
   ensure_key PI_MODELFLARE_API_KEY  "modelflare（modelflare.dev）"
   ensure_key PI_DEEPSEEK_API_KEY    "deepseek 官方 API"
   ensure_key PI_FLUXIONAI_API_KEY   "fluxionai"
+  ensure_key PI_ZHIJI_API_KEY       "zhiji（api.zhiji.pro）"
   ensure_key PI_AMAP_MCP_KEY        "高德地图 MCP key"
   ensure_shell_source
   echo "  密钥轮换方法：编辑 $SECRETS_FILE 对应行，重启 shell/pi 即可（旧 Key 请到供应商后台吊销）。"

@@ -237,6 +237,7 @@ if (Test-Path "$env:USERPROFILE\pi-config\mcp\agent-mcp.json") {
 | `PI_MODELFLARE_API_KEY` | modelflare | `models.json` |
 | `PI_DEEPSEEK_API_KEY` | deepseek 官方 | `auth.json` |
 | `PI_FLUXIONAI_API_KEY` | fluxionai | `auth.json` |
+| `PI_ZHIJI_API_KEY` | zhiji（智己 api.zhiji.pro） | `auth.json` |
 | `PI_AMAP_MCP_KEY` | 高德地图 MCP | `mcp.json` |
 
 AI 引导用户创建（密钥值由用户输入，**AI 不得猜测/打印**）：

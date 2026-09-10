@@ -6,7 +6,14 @@ pi 版本  : 0.85.1
 MCP 配置 : 1 个文件（mcp/agent-mcp.json，高德 amap，key 已脱敏为 ${PI_AMAP_MCP_KEY} 占位符）
 node_modules : 未包含(还原时联网重装)
 
-本次更新要点（相对 2026-09-09 15:10 版）:
+本次更新要点（相对 2026-09-10 01:10 版）:
+- 新增供应商 zhiji（智己 API api.zhiji.pro）: models.json 增加 gpt-5.6-sol / gpt-5.6-terra /
+  gpt-5.5 / gpt-5.4 四个模型；密钥走 auth.json 的 $PI_ZHIJI_API_KEY 引用（auth.json.example、
+  restore.sh ensure_key、README/AI-RESTORE 密钥表已同步）
+- check-model.ts 重构: /check_model 改用 getAvailable() 仅列出已配置凭据的供应商；输出改为
+  按供应商分组、按延迟排序的紧凑报告；错误信息汉化归类（超时/developer 角色不兼容/HTTP
+  状态码）；模型注册表 refresh 改为 await
+- npm/package-lock.json 同步: @narumitw/pi-btw 锁定 0.58.1
 - 密钥机制升级: models.json（suixiang/agentrouter/modelflare）、auth.json（deepseek/
   fluxionai）、mcp.json（高德）全部改为 $PI_*_API_KEY / ${PI_AMAP_MCP_KEY} 环境变量引用；
   密钥唯一存放点为各机器 ~/.pi/secrets/pi-secrets.env（600，不入库），还原时由

@@ -45,6 +45,7 @@ bash restore.sh --fresh    # 全新覆盖模式
 | `PI_MODELFLARE_API_KEY` | modelflare（modelflare.dev） | `models.json` |
 | `PI_DEEPSEEK_API_KEY` | deepseek 官方 API | `auth.json` |
 | `PI_FLUXIONAI_API_KEY` | fluxionai | `auth.json` |
+| `PI_ZHIJI_API_KEY` | zhiji（智己 api.zhiji.pro） | `auth.json` |
 | `PI_AMAP_MCP_KEY` | 高德地图 MCP | `mcp.json` |
 
 - 配置文件里只保存 `$PI_*_API_KEY` / `${PI_AMAP_MCP_KEY}` **环境变量引用**（pi 原生支持，缺失时对应模型不可用），仓库中无任何明文密钥
