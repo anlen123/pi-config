@@ -18,6 +18,9 @@ agent/npm/node_modules/
 agent/extensions/*/node_modules/
 __pycache__/
 
+# 同步基准（本地生成，记录上次同步的仓库快照）
+agent/.pi-config-sync.json
+
 # 运行时状态（本地生成）
 agent/live-thinking.json
 agent/deepseek-*.json

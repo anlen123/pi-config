@@ -3,32 +3,67 @@
 [pi](https://github.com/badlogic/pi-mono/) 编码助手的便携配置备份仓库。
 包含全局设置、插件（extensions）、Skills、MCP 配置，可在新电脑上快速还原环境。
 
-## 🔄 两种还原模式
+## 🔄 还原方式与选项
 
 ```bash
-bash restore.sh            # 交互合并模式（默认）
-bash restore.sh --fresh    # 全新覆盖模式
+bash restore.sh                       # 交互合并（默认）：先给差异汇总，再选处理方式
+bash restore.sh --status              # 只做三方对比报告，不写入任何文件
+bash restore.sh --dry-run             # 预览将要发生的变更，不写入
+bash restore.sh --yes                 # 非交互：按智能推荐处理（自动化 / CI）
+bash restore.sh --take-repo           # 非交互：全部采用仓库版本（模型/鉴权仍跳过）
+bash restore.sh --keep-local          # 非交互：全部保留本地，只补缺失文件
+bash restore.sh --only ext,skills,mcp # 只同步指定类别（ext/skills/mcp/npm/misc）
+bash restore.sh --fresh               # 全新覆盖：备份旧配置后整体替换（模型/鉴权文件仍保留本机）
 ```
 
-### 交互合并模式（默认）
+Windows 同款参数：`powershell -ExecutionPolicy Bypass -File .\restore.ps1 -Status / -DryRun / -Yes / -TakeRepo / -KeepLocal -Only ext,skills`
 
-逐文件对比 **本地 `~/.pi/agent`** 与 **本仓库**，只处理有差异的文件：
+### 合并逻辑：三方对比（`restore-engine.py`）
+
+同步过一次后，仓库快照会记在 `~/.pi/agent/.pi-config-sync.json`，
+下次同步就能区分「谁改的」，默认动作更聪明：
+
+| 情况 | 判定 | 智能推荐动作 |
+|---|---|---|
+| 仓库改了、本地没动 | 仅仓库改 | ✅ 直接采用仓库版本 |
+| 本地改了、仓库没动 | 仅本地改 | ⏸ 保留本地 |
+| 两边都改了 | **冲突** | ⏸ 保留本地（逐文件模式可选 C 逐块融合） |
+| 本地没有该文件 | 新增 | ✅ 安装仓库版本 |
+
+交互模式**先给出按类别统计的差异汇总**（新增 / 仅仓库改 / 冲突 / 仅本地改），
+再一次性选处理方式，不用对着几百个文件逐个按键：
+
+```
+  处理方式：
+    [1] 智能推荐（新增/仅仓库改→用仓库；冲突/仅本地改→保留本地）  ← 默认
+    [2] 全部采用仓库版本（模型/鉴权文件仍跳过）
+    [3] 全部保留本地（只补齐缺失文件）
+    [4] 逐文件选择（A/B/C，可 d 看 diff）
+    [5] 只报告不写入
+```
+
+逐文件模式下每个文件可选：
 
 | 选项 | 行为 |
 |---|---|
-| **A** | 以**远程（仓库）为主**：覆盖本地（本地旧版自动备份到 `~/.pi/agent.merge-bak-<时间戳>/`） |
-| **B** | 以**本地为主**：保留本地不动 |
-| **C** | **两者融合**：逐个差异块列出 `本地 vs 仓库` 内容，由你逐块挑选（1=保留本地 / 2=采用仓库 / 3=两者都要）；也可对单文件剩余冲突一键 `s=全用本地` 或 `a=全用仓库` |
+| **A** | 采用仓库版本（本地旧版本自动备份到 `~/.pi/agent.merge-bak-<时间戳>/`） |
+| **B** | 保留本地不动 |
+| **C** | **逐块融合**：逐个差异块列出「本地 vs 仓库」，选 1=保留本地 / 2=采用仓库 / 3=两者都要 |
+| **d** | 直接打印该文件的 unified diff |
+| **a / l** | 剩余文件全部采用仓库 / 全部保留本地 |
+| **q** | 中止（已处理的文件不回滚，备份目录仍在） |
+
+### 其它行为
 
 - 本地有、仓库没有的文件**一律保留**，绝不删除
-- 仅仓库有的文件会询问是否安装
-- 二进制文件（如 fff 索引）只支持 A/B
-- 非交互终端（如 CI 管道）自动降级为"仅安装缺失文件，差异保留本地"
+- 模型 / 鉴权文件和 `settings.json` 的默认模型字段**永不参与覆盖**（见下节）
+- 没有 `python3` 时自动降级为「只补齐缺失文件」（装 `python3` 才有三方对比 / 融合）
 
 ### 全新覆盖模式（`--fresh`）
 
-旧行为：把现有 `~/.pi/agent` 整体备份到 `~/.pi/agent.bak-<时间戳>` 后用仓库版本替换
-（`sessions/` 始终保留在原位，避免运行中的 pi 写会话报 ENOENT）。
+把现有 `~/.pi/agent` 整体备份到 `~/.pi/agent.bak-<时间戳>` 后用仓库版本替换，
+但 `models.json` / `models-store.json` / `auth.json` 会从备份还原回本机版本，
+`settings.json` 的默认模型字段也保持本机值（`sessions/` 始终保留在原位）。
 
 ## 🚫 同步范围：模型相关的一律不动
 
@@ -101,8 +136,9 @@ pi（或任意带终端工具的 AI）会按 [AI-RESTORE.md](AI-RESTORE.md) 自�
 ├── mcp/
 │   └── agent-mcp.json         # → ~/.pi/agent/mcp.json（高德地图，key 明文占位）
 ├── AI-RESTORE.md              # ⭐ AI 执行清单（还原时优先让 AI 读这个）
-├── restore.sh                 # Linux/macOS 还原脚本（交互合并 / --fresh）
-├── restore.ps1                # Windows 还原脚本
+├── restore-engine.py          # 合并引擎（三方对比 / 批量决策 / 逐块融合，跨平台）
+├── restore.sh                 # Linux/macOS 入口（转发给引擎；--fresh 自带实现）
+├── restore.ps1                # Windows 入口（有 Python 时同样转发给引擎）
 └── INFO.txt                   # 备份信息
 ```
 
@@ -117,9 +153,11 @@ git clone git@github.com:anlen123/pi-config.git
 cd pi-config
 
 # 3. 还原（Linux/macOS）
-bash restore.sh            # 交互合并（对比本地与仓库，A/B/C 选择）
-# bash restore.sh --fresh  # 或全新覆盖
-# Windows: powershell -ExecutionPolicy Bypass -File .\restore.ps1
+bash restore.sh --status   # 先看差异报告（可选，不写入）
+bash restore.sh            # 交互合并（先汇总差异，再选处理方式）
+# bash restore.sh --yes    # 非交互：按智能推荐合并
+# bash restore.sh --fresh  # 或全新覆盖（模型/鉴权文件仍保留本机）
+# Windows: powershell -ExecutionPolicy Bypass -File .\restore.ps1 -Status
 
 # 4. 把各供应商 Key 明文填进 ~/.pi/agent/models.json / auth.json / mcp.json
 #    （仓库模板里是 PASTE_YOUR_... 占位符；脚本结束时也会提示哪些还没填）
@@ -138,6 +176,11 @@ pi
 - **新增同步范围规则**：还原只同步插件 / Skill / MCP / 脚本，`models.json`、`models-store.json`、`auth.json` 以及 `settings.json` 的默认模型字段**一律不同步**（`--fresh` 也会从备份还原回来），避免拉取更新时冲掉本机模型配置
 - `auth.json.example`、`mcp/agent-mcp.json` 改为明文样式模板（`PASTE_YOUR_...` 占位符），仓库中依旧无任何真 Key
 - `restore.sh` / `restore.ps1` 结束时改为检查并列出仍未填的占位符
+- **还原逻辑重写（`restore-engine.py`）**：改为**三方对比**（上次同步仓库快照 / 本地 / 仓库当前），
+  区分「仅仓库改 / 仅本地改 / 冲突 / 新增」；交互模式先给差异汇总再选处理方式（智能推荐 / 全用仓库 /
+  全保留本地 / 逐文件 / 只报告）；新增 `--status`、`--dry-run`、`--yes`、`--take-repo`、
+  `--keep-local`、`--only <类别>` 参数与同步基准 `.pi-config-sync.json`；逐文件模式支持 `d` 看 diff、
+  `a/l` 批量决定、`q` 中止；`--fresh` 结束后也会写入基准
 
 ### 2026-09-10
 
@@ -168,3 +211,10 @@ pi
 - 同步范围见上文「🚫 同步范围」；`models.json` / `models-store.json` / `auth.json` 与
   `settings.json` 的默认模型字段永不参与覆盖，本地已有就一定是本地说了算
 - 因此可以放心 `git pull` 拿插件 / Skill / MCP 更新，不用担心模型配置被改回去
+
+### 同步基准与回滚
+
+- `~/.pi/agent/.pi-config-sync.json` 记录上次同步时的仓库 commit 与各文件哈希（本地文件，不入库）；
+  删掉它只会让下次同步退化为「无基准」模式（差异默认保留本地），不会破坏任何配置
+- 每次合并前被覆盖的本地文件都备份在 `~/.pi/agent.merge-bak-<时间戳>/`，需要回滚直接拷回即可
+- `--fresh` 的整体备份在 `~/.pi/agent.bak-<时间戳>/`

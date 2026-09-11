@@ -130,6 +130,30 @@ if (Test-Path "$env:USERPROFILE\.pi\agent") {
 
 ## 4. 还原配置文件
 
+**优先用仓库自带的脚本**（它就是为此设计的，别手工一个个 cp）：
+
+```bash
+# Linux / macOS
+bash "$PI_SRC/restore.sh" --status   # 只报告：三方对比（仓库快照 / 本地 / 仓库当前），不写入
+bash "$PI_SRC/restore.sh"           # 交互合并：先给差异汇总，再选处理方式
+bash "$PI_SRC/restore.sh" --yes      # 非交互：按智能推荐合并（新增/仅仓库改→用仓库，其余保留本地）
+```
+```powershell
+# Windows（装了 Python 走同一套引擎；没装则降级为全新覆盖）
+powershell -ExecutionPolicy Bypass -File "$PI_SRC\restore.ps1" -Status
+powershell -ExecutionPolicy Bypass -File "$PI_SRC\restore.ps1"
+```
+
+合并逻辑（`restore-engine.py`）：读 `PI_AGENT/.pi-config-sync.json`（上次同步基准）做**三方对比** ——
+「仅仓库改」用仓库版、「仅本地改」保留本地、「两边都改」标为冲突默认保留本地（可选逐块融合）、
+「本地缺失」直接安装。没有基准文件时退化为「有新文件就装、差异保留本地」。
+
+> 用脚本时可跳过下面手工复制的命令；只有想手工还原或脚本不可用时才照做。注意
+> **模型 / 鉴权文件（models.json、models-store.json、auth.json）本机已有就不要覆盖**，
+> `settings.json` 的 `defaultProvider` / `defaultModel` / `defaultThinkingLevel` 也要保持本机值。
+
+### 手工还原（脚本不可用时）
+
 ```bash
 # Linux
 mkdir -p "$HOME/.pi/agent"

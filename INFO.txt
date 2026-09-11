@@ -7,6 +7,14 @@ MCP 配置 : 1 个文件（mcp/agent-mcp.json，高德 amap，key 为 PASTE_YOUR
 node_modules : 未包含(还原时联网重装)
 
 本次更新要点（相对 2026-09-10 版）:
+- 还原逻辑重写: 新增 restore-engine.py（跨平台合并引擎）。改为「三方对比」：
+  上次同步仓库快照(.pi-config-sync.json) / 本地当前 / 仓库当前 → 区分 仅仓库改（自动采用）、
+  仅本地改（保留）、冲突（默认保留，可选逐块融合）、本地缺失（直接装）。
+  交互模式先给按类别统计的差异汇总，再一次性选处理方式（智能推荐/全用仓库/全保留本地/
+  逐文件 A/B/C, d 看 diff, a/l 批量, q 中止 / 只报告）。
+  新增参数: --status、--dry-run、--yes、--take-repo、--keep-local、--only <类别>。
+  restore.sh / restore.ps1 变为薄入口（Windows 有 Python 时走同一引擎）；
+  修复无 diffutils（无 cmp/diff）环境下所有文件被误判为“有差异”的问题。
 - 鉴权改为「明文直填」: 彻底移除 $PI_*_API_KEY / ${PI_AMAP_MCP_KEY} 环境变量引用与
   ~/.pi/secrets/pi-secrets.env 机制。各机器把 Key 明文写进自己的
   models.json（apiKey 字段）/ auth.json / mcp.json；还原时不再询问密钥、不再注入 shell source。

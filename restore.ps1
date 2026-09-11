@@ -14,7 +14,26 @@
 #
 # 密钥策略：明文。Key 直接写在 models.json / auth.json / mcp.json 里，
 # 不用环境变量、不写 secrets 文件；仓库里只有 PASTE_YOUR_... 占位符。
+#
+# 参数:
+#   -Status        只做三方对比报告，不写入（需 Python）
+#   -DryRun        预览变更，不写入（需 Python）
+#   -Yes           非交互：按智能推荐处理（需 Python）
+#   -TakeRepo      非交互：全部采用仓库版本（模型/鉴权仍跳过）
+#   -KeepLocal     非交互：全部保留本地，只补缺失文件
+#   -Only ext,skills,mcp   只同步指定类别
+#   -Mode fresh    强制使用“全新覆盖”逻辑（不动 python 引擎）
+#   装 Python 时会调用跨平台的 restore-engine.py，获得与 Linux 一致的三方对比/批量合并能力。
 # =============================================================================
+param(
+    [ValidateSet("merge", "fresh")][string]$Mode = "merge",
+    [switch]$Status,
+    [switch]$DryRun,
+    [switch]$Yes,
+    [switch]$TakeRepo,
+    [switch]$KeepLocal,
+    [string]$Only = ""
+)
 $ErrorActionPreference = "Stop"
 
 $HERE = $PSScriptRoot
@@ -23,8 +42,30 @@ $AgentDir = Join-Path $env:USERPROFILE ".pi\agent"
 Write-Host "==> 目标目录: $AgentDir"
 
 if (-not (Test-Path (Join-Path $HERE "agent"))) {
-    Write-Host "错误: 当前目录不是 pi-portable 解压目录（缺少 agent/）" -ForegroundColor Red
+    Write-Host "错误: 当前目录不是 pi-config 仓库（缺少 agent/）" -ForegroundColor Red
     exit 1
+}
+
+# ── 0. 装了 Python 就走跨平台引擎（三方对比 / 批量合并 / 融合）───────────────
+$PyExe = $null
+foreach ($cand in @("python", "python3", "py")) {
+    $cmd = Get-Command $cand -ErrorAction SilentlyContinue
+    if ($cmd) { $PyExe = $cmd.Source; break }
+}
+if ($PyExe -and $Mode -ne "fresh" -and (Test-Path (Join-Path $HERE "restore-engine.py"))) {
+    $engineMode = if ($Status) { "status" } else { "merge" }
+    $engineArgs = @((Join-Path $HERE "restore-engine.py"), "--repo-root", $HERE,
+                    "--agent-dir", $AgentDir, "--home", $env:USERPROFILE, "--mode", $engineMode)
+    if ($DryRun)    { $engineArgs += "--dry-run" }
+    if ($Yes)       { $engineArgs += "--yes" }
+    if ($TakeRepo)  { $engineArgs += "--take-repo" }
+    if ($KeepLocal) { $engineArgs += "--keep-local" }
+    if ($Only)      { $engineArgs += @("--only", $Only) }
+    & $PyExe @engineArgs
+    exit $LASTEXITCODE
+}
+if (-not $PyExe) {
+    Write-Host "  ⚠ 未找到 Python：降级为 PowerShell 内置的“全新覆盖”逻辑（装 Python 可获得三方对比/批量合并）" -ForegroundColor Yellow
 }
 
 # ── 1. 备份现有配置 ─────────────────────────────────────────────────────────
@@ -167,4 +208,9 @@ Write-Host "==============================================" -ForegroundColor Gre
 Write-Host " ✅ 还原完成！现在启动 pi 即可。" -ForegroundColor Green
 Write-Host "    首次启动会自动安装 settings.json 中声明的全部 packages。" -ForegroundColor Green
 Write-Host "    模型/鉴权文件已保留本机版本（不同步）；仓库只提供带 PASTE_YOUR_... 占位符的模板。" -ForegroundColor Green
+if ($PyExe) {
+    & $PyExe (Join-Path $HERE "restore-engine.py") --repo-root $HERE --agent-dir $AgentDir `
+        --home $env:USERPROFILE --mode manifest | Out-Null
+    Write-Host "    已写入同步基准（下次可用 -Status 做三方对比）。" -ForegroundColor Green
+}
 Write-Host "==============================================" -ForegroundColor Green
