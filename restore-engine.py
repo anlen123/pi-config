@@ -30,6 +30,7 @@ import difflib
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -81,6 +82,50 @@ def read_text(path: str):
         return fh.read().splitlines()
 
 
+MCP_KEY_RE = re.compile(r'key=[^"&\s\\]+')
+
+
+def comparable_bytes(rel: str, path: str) -> bytes:
+    """用于比较的内容：mcp 配置忽略 key 值（占位符 vs 真实 key 不算差异）"""
+    with open(path, "rb") as fh:
+        data = fh.read()
+    if rel.startswith("mcp/"):
+        try:
+            return MCP_KEY_RE.sub("key=KEY", data.decode("utf-8")).encode("utf-8")
+        except UnicodeDecodeError:
+            return data
+    return data
+
+
+def files_equivalent(rel: str, a: str, b: str) -> bool:
+    try:
+        if os.path.getsize(a) != os.path.getsize(b):
+            # 大小不同也可能是 mcp key 长度不同，继续按归一化内容比较
+            if not rel.startswith("mcp/"):
+                return False
+        return comparable_bytes(rel, a) == comparable_bytes(rel, b)
+    except OSError:
+        return False
+
+
+def repo_bytes_with_local_mcp_key(rel: str, src: str, target: str) -> bytes:
+    """采用仓库版 mcp 配置时：若仓库是占位符、本机已有真实 key，则保留本机 key"""
+    with open(src, "rb") as fh:
+        data = fh.read()
+    if not rel.startswith("mcp/") or not os.path.exists(target):
+        return data
+    try:
+        new = data.decode("utf-8")
+        old = open(target, encoding="utf-8").read()
+    except (UnicodeDecodeError, OSError):
+        return data
+    nm, om = MCP_KEY_RE.search(new), MCP_KEY_RE.search(old)
+    if nm and om and ("PASTE_YOUR_" in nm.group(0) or "${" in nm.group(0)):
+        print("      ↳ 保留本机 mcp key（仓库里是占位符）")
+        return (new[:nm.start()] + om.group(0) + new[nm.end():]).encode("utf-8")
+    return data
+
+
 def same_file(a: str, b: str) -> bool:
     try:
         if os.path.getsize(a) != os.path.getsize(b):
@@ -119,6 +164,17 @@ def ask(prompt: str, valid, default: str = "") -> str:
         if ans in valid:
             return ans
         print("    输入无效，请重选。")
+
+
+def untracked_repo_files(root: str):
+    """仓库里未 git add 的文件不会参与同步（引擎只认 git ls-files），提示一下"""
+    try:
+        out = subprocess.run(["git", "-C", root, "status", "--porcelain", "--", "agent", "mcp"],
+                             capture_output=True, text=True, check=True).stdout
+    except Exception:
+        return []
+    return [ln[3:].strip() for ln in out.splitlines()
+            if ln.startswith("??") and ln[3:].strip().startswith(("agent/", "mcp/"))]
 
 
 def repo_files(root: str):
@@ -242,7 +298,7 @@ def build_entries(repo_root, agent_dir, home, manifest, only):
         protected = False
         if not os.path.exists(target):
             status = "missing"          # 本机没有 → 装仓库模板（即使它是模型/鉴权文件）
-        elif same_file(src, target):
+        elif files_equivalent(rel, src, target):
             status = "same"
         elif is_nosync:
             protected = True            # 模型/鉴权：本地有就永不覆盖
@@ -363,7 +419,13 @@ def process(entries, agent_dir, backup_dir, dry, interactive, bulk=None):
         os.makedirs(os.path.dirname(e.target), exist_ok=True)
         if os.path.exists(e.target):
             backup_file(e.target, agent_dir, backup_dir)
-        shutil.copy2(e.src, e.target)
+        if e.rel.startswith("mcp/"):
+            # 先算好内容再打开写（open(...,"wb") 会立即截断，不能把读取写在 write 参数里）
+            data = repo_bytes_with_local_mcp_key(e.rel, e.src, e.target)
+            with open(e.target, "wb") as fh:
+                fh.write(data)
+        else:
+            shutil.copy2(e.src, e.target)
         if e.rel == "agent/settings.json":
             kept_keys = protect_settings_values(e.target, os.path.join(backup_dir, "settings.json"))
             if kept_keys:
@@ -415,6 +477,7 @@ def main() -> int:
     ap.add_argument("--take-repo", action="store_true", help="非交互：全部采用仓库（除模型/鉴权文件）")
     ap.add_argument("--keep-local", action="store_true", help="非交互：全部保留本地，只补齐缺失文件")
     ap.add_argument("--no-color", action="store_true")
+    ap.add_argument("--list", action="store_true", help="逐条列出差异文件及分类")
     args = ap.parse_args()
 
     repo_root = os.path.abspath(args.repo_root)
@@ -446,6 +509,11 @@ def main() -> int:
     print_summary(entries, only, dry=args.dry_run or args.mode == "status",
                   protected_notes=protected_notes)
 
+    untracked = untracked_repo_files(repo_root)
+    if untracked:
+        print("    ⚠ 仓库里有 %d 个未跟踪文件不参与同步（先 git add 再生效）: %s"
+              % (len(untracked), ", ".join(untracked[:5])))
+
     # 仅本地有的文件（只报告，不删）
     try:
         tracked = set(repo_files(repo_root))
@@ -461,6 +529,12 @@ def main() -> int:
                   % (len(local_extra), ", ".join(sorted(local_extra)[:3])))
     except Exception:
         pass
+
+    if args.list:
+        print("")
+        print("    明细（状态 → 文件）:")
+        for e in sorted(entries, key=lambda x: (x.cat, x.status, x.rel)):
+            print("      %-10s %s" % (STATUS_INFO[e.status][0], e.rel))
 
     if args.mode == "status":
         print("")

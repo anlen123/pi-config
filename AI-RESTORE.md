@@ -208,7 +208,7 @@ foreach ($f in @("models.json", "models-store.json", "auth.json")) {
 | `models-store.json` | 模型存储 |
 | `AGENTS.md` | 全局沟通规则（中文） |
 | `keybindings.json` / `trust.json` / `pi-fff.json` | 快捷键 / 项目信任 / fff 设置 |
-| `extensions/` | 8 个 ts 文件（model-info-footer、context-progress-bar、dedupe-status、deepseek-balance、deepseek-peak-status、herdr-agent-state、live-thinking、question）+ bash-guard/ 目录（依赖 shell-quote，见步骤 8）+ prompt-snippets/ 目录 + mcp/index.ts |
+| `extensions/` | 9 个 ts 文件（check-model、context-progress-bar、deepseek-balance、deepseek-peak-status、herdr-agent-state、live-thinking、live-tool-output、question、win-notify）+ `bash-guard/` 目录（依赖 shell-quote，见步骤 8）+ `prompt-snippets/` 目录 |
 | `skills/` | 13 个目录 |
 | `npm/package.json` + `npm/package-lock.json` | 包清单 |
 | `git/` | git 包缓存 |

@@ -4,7 +4,7 @@
 #
 # 用法:
 #   bash restore.sh                 # 交互合并（默认）：先汇总差异，再选处理方式
-#   bash restore.sh --status        # 只做三方对比报告，不写入任何文件
+#   bash restore.sh --status [--list]  # 只做三方对比报告（--list 逐条列出），不写入
 #   bash restore.sh --dry-run       # 预览将要发生的变更，不写入
 #   bash restore.sh --yes           # 非交互：按智能推荐处理（CI/自动化可用）
 #   bash restore.sh --take-repo     # 非交互：全部采用仓库版本（模型/鉴权仍跳过）
@@ -48,6 +48,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --fresh)      MODE="fresh" ;;
     --status)     MODE="status" ;;
+    --list)       ENGINE_ARGS+=(--list) ;;
     --dry-run)    ENGINE_ARGS+=(--dry-run) ;;
     --yes)        ENGINE_ARGS+=(--yes) ;;
     --take-repo)  ENGINE_ARGS+=(--take-repo) ;;

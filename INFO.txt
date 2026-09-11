@@ -19,6 +19,12 @@ node_modules : 未包含(还原时联网重装)
   ~/.pi/secrets/pi-secrets.env 机制。各机器把 Key 明文写进自己的
   models.json（apiKey 字段）/ auth.json / mcp.json；还原时不再询问密钥、不再注入 shell source。
   仓库（public）中这些位置只保留 PASTE_YOUR_... 占位符，真 Key 一律不入库。
+- 同步本机较新内容: live-thinking.ts（thinkingVisibilityOverrides 新版逻辑）、
+  新增 live-tool-output.ts（命令输出执行中展开/结束折叠）、win-notify.ts（WSL→Windows Toast）；
+  npm 依赖升级（pi-mcp-adapter 2.33.0 / pi-subagents 0.67.0 / pi-web-access 0.29.0 /
+  pi-powerline-footer 0.17.1）；trust.json 增 1 个项目路径；prompt-snippets import 统一 @earendil-works/*
+- 引擎增强: MCP 配置比较忽略 key 值（本机真实 key vs 仓库占位符不算差异）；采用仓库 MCP 模板时
+  自动保留本机 key；仓库里未 git add 的文件会提示“不参与同步”
 - 新增「同步范围」规则: 还原只同步 插件 extensions/、skills/、mcp/、脚本、npm 包清单，
   以及 settings.json 的非模型字段。以下内容永不参与覆盖（--fresh 也从备份还原）:
     agent/models.json、agent/models-store.json、agent/auth.json，

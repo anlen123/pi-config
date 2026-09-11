@@ -21,9 +21,9 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { ExtensionAPI, ExtensionContext } from "@hhyy668/pi-coding-agent";
-import { CustomEditor } from "@hhyy668/pi-coding-agent";
-import { Key, matchesKey, truncateToWidth, wrapTextWithAnsi } from "@hhyy668/pi-tui";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { CustomEditor } from "@earendil-works/pi-coding-agent";
+import { Key, matchesKey, truncateToWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
 interface Snippet {
 	/** Filename, e.g. "concise.md" */

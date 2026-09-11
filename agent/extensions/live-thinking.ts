@@ -2,16 +2,18 @@
  * pi-live-thinking — 实时思考展示 / 历史思考折叠
  *
  * 效果：
- * - 当前正在流式输出的消息：思考过程实时展开显示（即使全局 hideThinkingBlock: true）。
- * - 已完成的消息 / 历史记录：思考过程折叠为一行 "Thinking..." 标签。
- * - 点击折叠的思考标签可展开，再点击可收起（pi 内置鼠标支持）；Ctrl+T 可全局切换。
+ * - 当前正在流式输出的消息：思考过程实时展开显示（无论全局 hideThinkingBlock 设置如何）。
+ * - 已完成的消息 / 历史记录：思考过程折叠为一行 "Thinking..." 标签（同样不依赖全局设置）。
+ * - 点击折叠的思考标签可展开，再点击可收起（pi 内置鼠标支持）。
  *
  * 原理：
- * - pi 在 hideThinkingBlock: true 时会把所有思考块（包括正在流式输出的）折叠。
+ * - pi 的折叠行为由全局 hideThinkingBlock 设置控制（Ctrl+T 会持久化切换），
+ *   无法区分“正在流式”和“历史消息”。
  * - 本插件对 AssistantMessageComponent.prototype.updateContent 做包装：
- *   仅当组件处于 streaming 状态时，临时把 hideThinkingBlock 视为 false，
- *   消息结束（message_end 调 updateContent(msg, false)）后自动恢复折叠。
- * - 历史消息的折叠与点击展开/收起均使用 pi 内置行为，不受影响。
+ *   流式状态下强制 hideThinkingBlock=false（展开），
+ *   非流式（消息完成 / 历史恢复）强制 hideThinkingBlock=true（折叠）。
+ * - 点击展开/收起使用 pi 内置的 thinkingVisibilityOverrides，优先级高于
+ *   强制值，因此点击交互不受影响。
  *
  * 配置：~/.pi/agent/live-thinking.json
  *   { "enabled": true, "label": "Thinking... (click to toggle)" }
@@ -101,9 +103,11 @@ function installPatch(isEnabled: () => boolean): void {
     // 保持原签名默认值语义：updateContent(msg) 继承组件当前 isStreaming
     const streaming = isStreaming === undefined ? this.isStreaming : isStreaming;
     const previous = this.hideThinkingBlock;
-    if (streaming && isEnabled()) {
-      // 正在流式输出：即使全局设置为折叠，也临时展开思考
-      this.hideThinkingBlock = false;
+    if (isEnabled()) {
+      // 不依赖全局 hideThinkingBlock（Ctrl+T 会持久化切换它）：
+      //   流式中 → 强制展开；已完成 / 历史消息 → 强制折叠。
+      // 点击展开（thinkingVisibilityOverrides）优先级更高，交互不受影响。
+      this.hideThinkingBlock = !streaming;
     }
     try {
       return original.call(this, message, isStreaming);

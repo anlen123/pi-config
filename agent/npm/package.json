@@ -9,11 +9,11 @@
     "@narumitw/pi-btw": "^0.58.1",
     "@narumitw/pi-goal": "^0.54.4",
     "pi-cache-optimizer": "^2.8.7",
-    "pi-mcp-adapter": "^2.32.1",
-    "pi-powerline-footer": "^0.17.0",
-    "pi-subagents": "^0.66.0",
+    "pi-mcp-adapter": "^2.33.0",
+    "pi-powerline-footer": "^0.17.1",
+    "pi-subagents": "^0.67.0",
     "pi-tool-display": "^0.5.0",
-    "pi-web-access": "^0.28.0",
+    "pi-web-access": "^0.29.0",
     "pi-wtf": "^0.2.5"
   }
 }

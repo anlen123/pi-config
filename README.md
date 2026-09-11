@@ -84,6 +84,10 @@ Windows 同款参数：`powershell -ExecutionPolicy Bypass -File .\restore.ps1 -
 
 > 一句话：**拉取仓库更新不会动你的模型配置**。模型怎么配、用哪个模型，永远由本机决定。
 
+MCP 配置（`mcp/`）在同步范围内，但引擎比较时会**忽略 key 值**：本机填了真实 key、仓库里是
+`PASTE_YOUR_...` 占位符，两者视为一致；万一仓库模板结构有更新（新增服务器等），采用仓库版时
+也会**自动把本机 key 填回去**。
+
 ## 🔑 密钥：明文直填，不用环境变量
 
 策略就一句话：**能用明文就用明文**。Key 直接（明文）写进本机配置文件，不做环境变量中转、不写 `~/.pi/secrets`、还原时也不再询问：
@@ -122,10 +126,10 @@ pi（或任意带终端工具的 AI）会按 [AI-RESTORE.md](AI-RESTORE.md) 自�
 │   ├── auth.json.example      # auth.json 明文模板（PASTE_YOUR_... 占位符）
 │   ├── trust.json             # 项目信任列表
 │   ├── pi-fff.json            # fff 设置
-│   ├── extensions/            # 本地插件（bash-guard、context-progress-bar、
-│   │                          #   deepseek-balance、deepseek-peak-status、
-│   │                          #   herdr-agent-state、live-thinking、
-│   │                          #   prompt-snippets、check-model、question）
+│   ├── extensions/            # 本地插件（bash-guard、check-model、context-progress-bar、
+│   │                          #   deepseek-balance、deepseek-peak-status、herdr-agent-state、
+│   │                          #   live-thinking、live-tool-output、win-notify、
+│   │                          #   prompt-snippets、question）
 │   ├── extensions-disabled/   # 已归档插件（model-info-footer、dedupe-status、
 │   │                          #   旧版 mcp 客户端；pi 不加载，含恢复说明）
 │   ├── skills/                # 全部 Skills
@@ -181,6 +185,16 @@ pi
   全保留本地 / 逐文件 / 只报告）；新增 `--status`、`--dry-run`、`--yes`、`--take-repo`、
   `--keep-local`、`--only <类别>` 参数与同步基准 `.pi-config-sync.json`；逐文件模式支持 `d` 看 diff、
   `a/l` 批量决定、`q` 中止；`--fresh` 结束后也会写入基准
+
+### 2026-09-11（第二批）
+
+- 同步本机较新的插件与依赖：`live-thinking.ts`（改用 `thinkingVisibilityOverrides` 的新版逻辑）、
+  新增 `live-tool-output.ts`（命令输出执行中展开/结束折叠）、`win-notify.ts`（WSL 下 Windows Toast 通知）；
+  `npm/package.json` + `package-lock.json` 升级（pi-mcp-adapter 2.33.0、pi-subagents 0.67.0、
+  pi-web-access 0.29.0、pi-powerline-footer 0.17.1）；`prompt-snippets` 的 import 统一为 `@earendil-works/*`
+- 合并引擎增强：MCP 配置比较**忽略 key 值**（本机真实 key vs 仓库占位符不再被当成差异）；
+  采用仓库版 MCP 模板时**自动保留本机 key**；仓库里未 `git add` 的文件会提示"不参与同步"
+- `.gitignore`：`win-notify.json` / `live-tool-output.json` 归入本地运行时状态
 
 ### 2026-09-10
 
