@@ -4,7 +4,7 @@
 #
 # 用法:
 #   bash restore.sh            # 交互合并模式（默认）：逐文件对比"本地 ~/.pi/agent"
-#                              # 与"本仓库"，差异处可选 A/B/C（见下），最后手动输入密钥
+#                              # 与"本仓库"，差异处可选 A/B/C（见下）
 #   bash restore.sh --fresh    # 全新覆盖模式：备份旧配置后整体替换为仓库版本
 #
 # 差异文件的三种处理方式:
@@ -13,16 +13,23 @@
 #   C = 两者融合：逐个差异块列出"本地 vs 仓库"，由你逐块挑选；
 #       单个文件内剩余冲突可一键 "全部保留本地" 或 "全部采用仓库"
 #
-# 模型供应商密钥（suixiang/agentrouter/modelflare/deepseek/fluxionai/高德MCP）
-# 绝不入库：还原完成后脚本会逐项询问并写入 ~/.pi/secrets/pi-secrets.env
-# （目录 700 / 文件 600），并在 ~/.zshrc 与 ~/.bashrc 注入自动 source。
+# 同步范围（重要）:
+#   只同步 脚本 / 插件(extensions) / Skill / MCP 配置 / settings.json 的非模型字段。
+#   模型与鉴权相关内容一律不同步（本地已有则跳过；--fresh 也会从备份还原）:
+#     agent/models.json        自定义 provider / model 定义
+#     agent/models-store.json  模型列表状态
+#     agent/auth.json          密钥（本机明文保存）
+#     settings.json 的 defaultProvider / defaultModel / defaultThinkingLevel
+#
+# 密钥策略（明文，简单直接）:
+#   各机器把 Key 明文写在自己的 models.json / auth.json / mcp.json 即可；
+#   不用环境变量中转、不写 ~/.pi/secrets、还原时也不再询问密钥。
+#   仓库中这些位置只有 PASTE_YOUR_... 占位符，真 Key 绝不入库。
 # =============================================================================
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PI_AGENT_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
-SECRETS_DIR="$HOME/.pi/secrets"
-SECRETS_FILE="$SECRETS_DIR/pi-secrets.env"
 MODE="merge"
 [ "${1:-}" = "--fresh" ] && MODE="fresh"
 
@@ -34,83 +41,90 @@ SKIPPED_FILES=()
 echo "==> 目标目录: $PI_AGENT_DIR（模式: $MODE）"
 [ -d "$HERE/agent" ] || { echo "错误: 当前目录不是 pi-config 仓库（缺少 agent/）"; exit 1; }
 
-# ── 密钥相关函数 ────────────────────────────────────────────────────────────
-ensure_secrets_file() {
-  mkdir -p "$SECRETS_DIR"; chmod 700 "$SECRETS_DIR" 2>/dev/null || true
-  [ -f "$SECRETS_FILE" ] || { echo "# Pi provider secrets - 由 shell 启动时 source（勿提交到任何仓库）" > "$SECRETS_FILE"; }
-  chmod 600 "$SECRETS_FILE" 2>/dev/null || true
+# ── 同步范围：模型 / 鉴权类文件一律不同步 ────────────────────────────────────
+NO_SYNC_FILES=(
+  "agent/models.json"         # 自定义 provider / model 定义
+  "agent/models-store.json"   # 模型列表状态
+  "agent/auth.json"           # 密钥（本机明文保存）
+)
+is_no_sync() {
+  local rel="$1" x
+  for x in "${NO_SYNC_FILES[@]}"; do [ "$rel" = "$x" ] && return 0; done
+  return 1
 }
 
-# ensure_key <VAR名> <中文说明>：已配置则提示回车跳过，否则不回显输入
-ensure_key() {
-  local var="$1" desc="$2" val=""
-  if grep -q "^export ${var}=" "$SECRETS_FILE" 2>/dev/null; then
-    printf "  %-26s 已配置 ✅（直接回车保留；输入新值则覆盖）: " "$var"
-    read -r -s val || val=""
-    echo ""
-    [ -n "$val" ] || return 0
-  else
-    printf "  %-26s 未配置，请输入（不回显，回车跳过）: " "$var"
-    read -r -s val || val=""
-    echo ""
-    [ -n "$val" ] || { echo "    ⚠ 跳过 $var（对应功能在配置前不可用）"; return 0; }
+# 文件内容比较（有的环境没装 diffutils：cmp/diff 都不存在，会静默全部判定为“有差异”）
+files_equal() {
+  if command -v cmp >/dev/null 2>&1; then
+    cmp -s "$1" "$2"; return $?
   fi
-  # 误输入防护：过短的值多半是误按，需确认后才写入（防止污染已配置的密钥）
-  if [ ${#val} -lt 16 ]; then
-    printf "    ⚠ 输入长度 %d 过短，疑似误输入。确认写入? [y/N] " ${#val}
-    read -r c || c=""
-    case "$c" in [yY]*) ;; *) echo "    ⏭ 未写入，保留原值"; return 0 ;; esac
+  if command -v diff >/dev/null 2>&1; then
+    diff -q "$1" "$2" >/dev/null 2>&1; return $?
   fi
-  # 转义替换（值仅限常规密钥字符）
-  local esc; esc=$(printf '%s' "$val" | sed 's/[&|]/\\&/g')
-  if grep -q "^export ${var}=" "$SECRETS_FILE" 2>/dev/null; then
-    sed -i "s#^export ${var}=.*#export ${var}=${esc}#" "$SECRETS_FILE"
-  else
-    echo "export ${var}=${esc}" >> "$SECRETS_FILE"
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c 'import sys;sys.exit(0 if open(sys.argv[1],"rb").read()==open(sys.argv[2],"rb").read() else 1)' "$1" "$2"
+    return $?
   fi
-  echo "    ✅ $desc 已写入 $SECRETS_FILE"
+  # 最后退回逐行读取（纯 bash）
+  local a b
+  a=$(cksum < "$1" 2>/dev/null) || return 1
+  b=$(cksum < "$2" 2>/dev/null) || return 1
+  [ "$a" = "$b" ]
 }
 
-ensure_shell_source() {
-  local block="# Pi provider secrets（models.json / auth.json / mcp.json 的环境变量引用）
-if [ -f \"\$HOME/.pi/secrets/pi-secrets.env\" ]; then
-  . \"\$HOME/.pi/secrets/pi-secrets.env\"
-fi"
-  for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
-    [ -f "$rc" ] || continue
-    if ! grep -q "pi-secrets.env" "$rc"; then
-      printf '\n%s\n' "$block" >> "$rc"
-      echo "  ✅ 已在 $rc 注入 secrets 自动加载"
+# settings.json 里属于"模型相关"的字段：同步后保留本地值
+SETTINGS_PROTECT_KEYS='["defaultProvider","defaultModel","defaultThinkingLevel","models"]'
+PROTECT_PY='import json, sys
+new_p, old_p, keys = sys.argv[1], sys.argv[2], json.loads(sys.argv[3])
+try:
+    new = json.load(open(new_p, encoding="utf-8"))
+except Exception:
+    sys.exit(0)
+try:
+    old = json.load(open(old_p, encoding="utf-8"))
+except Exception:
+    sys.exit(0)
+changed = [k for k in keys if k in old and new.get(k) != old[k]]
+for k in changed:
+    new[k] = old[k]
+if changed:
+    with open(new_p, "w", encoding="utf-8") as fh:
+        json.dump(new, fh, ensure_ascii=False, indent=2)
+        fh.write("\n")
+    print("      ↳ 模型相关字段保持本地值: " + ", ".join(changed))
+'
+# protect_settings <本地旧 settings.json>
+protect_settings() {
+  local old="$1" t="$PI_AGENT_DIR/settings.json"
+  [ -f "$t" ] || return 0
+  [ -f "$old" ] || return 0
+  command -v python3 >/dev/null 2>&1 || { echo "      ⚠ 未找到 python3，settings.json 的默认模型可能被仓库值覆盖"; return 0; }
+  python3 -c "$PROTECT_PY" "$t" "$old" "$SETTINGS_PROTECT_KEYS" || true
+}
+
+# auth.json 缺失时从 example 生成（明文模板，Key 为 PASTE_YOUR_... 占位符）
+ensure_auth_json() {
+  if [ ! -f "$PI_AGENT_DIR/auth.json" ] && [ -f "$PI_AGENT_DIR/auth.json.example" ]; then
+    cp "$PI_AGENT_DIR/auth.json.example" "$PI_AGENT_DIR/auth.json"
+    chmod 600 "$PI_AGENT_DIR/auth.json"
+    echo "  已从 auth.json.example 生成 auth.json（明文模板，需填真实 Key）"
+  fi
+}
+
+# 占位符检查：仓库里只有 PASTE_YOUR_... 占位符（明文直填策略）
+PLACEHOLDER_RE='PASTE_YOUR_|PASTE_|sk-PASTE|[$][{]PI_|[$]PI_[A-Z_]+_API_KEY|[{]env:[A-Z_]+[}]'
+check_placeholders() {
+  local f found=0
+  for f in "$PI_AGENT_DIR/models.json" "$PI_AGENT_DIR/auth.json" "$PI_AGENT_DIR/mcp.json"; do
+    [ -f "$f" ] || continue
+    if grep -qE "$PLACEHOLDER_RE" "$f" 2>/dev/null; then
+      echo "  ⚠ $f 中仍有未填的占位符："
+      grep -nE "$PLACEHOLDER_RE" "$f" | sed 's/^/      /'
+      found=1
     fi
   done
-}
-
-input_all_keys() {
-  echo ""
-  echo "==> 模型供应商密钥（手动输入，写入 $SECRETS_FILE，权限 600，绝不入库）"
-  ensure_secrets_file
-  ensure_key PI_SUIXIANG_API_KEY    "suixiang（sui-xiang.com）"
-  ensure_key PI_AGENTROUTER_API_KEY "agentrouter（agentrouter.org）"
-  ensure_key PI_MODELFLARE_API_KEY  "modelflare（modelflare.dev）"
-  ensure_key PI_DEEPSEEK_API_KEY    "deepseek 官方 API"
-  ensure_key PI_FLUXIONAI_API_KEY   "fluxionai"
-  ensure_key PI_ZHIJI_API_KEY       "zhiji（api.zhiji.pro）"
-  ensure_key PI_AMAP_MCP_KEY        "高德地图 MCP key"
-  ensure_shell_source
-  echo "  密钥轮换方法：编辑 $SECRETS_FILE 对应行，重启 shell/pi 即可（旧 Key 请到供应商后台吊销）。"
-}
-
-# 兼容旧版 mcp.json 的 {env:AMAP_MCP_KEY} 占位符
-fix_legacy_mcp_placeholder() {
-  local f="$PI_AGENT_DIR/mcp.json"
-  [ -f "$f" ] && grep -q '{env:AMAP_MCP_KEY}' "$f" || return 0
-  ensure_secrets_file
-  local key=""; grep -q '^export PI_AMAP_MCP_KEY=' "$SECRETS_FILE" && key=$(grep '^export PI_AMAP_MCP_KEY=' "$SECRETS_FILE" | head -1 | sed 's/^export PI_AMAP_MCP_KEY=//')
-  if [ -z "$key" ] && [ -n "${AMAP_MCP_KEY:-}" ]; then key="$AMAP_MCP_KEY"; fi
-  if [ -n "$key" ]; then
-    sed -i "s#{env:AMAP_MCP_KEY}#$key#g" "$f"; echo "  ✅ 已注入高德 key 到 $f"
-  else
-    echo "  ⚠ $f 仍含 {env:AMAP_MCP_KEY} 旧占位符；建议改用 \${PI_AMAP_MCP_KEY} 并配置 pi-secrets.env"
+  if [ "$found" = "1" ]; then
+    echo "    → 现在用明文：把真实 Key 直接粘贴替换掉这些占位符即可（不需要环境变量 / pi-secrets.env）。"
   fi
 }
 
@@ -196,6 +210,12 @@ if [ "$MODE" = "merge" ]; then
     [ -n "$target" ] || continue
     src="$HERE/$rel"
 
+    # 模型 / 鉴权类文件不同步：本地已有就一律不动（新机器上本地没有，仍会安装模板）
+    if is_no_sync "$rel" && [ -f "$target" ]; then
+      SKIPPED_FILES+=("$rel（模型/鉴权，不同步）")
+      continue
+    fi
+
     if [ ! -f "$target" ]; then
       if [ "$INTERACTIVE" = "1" ]; then
         printf "  [新增] %s 仓库有、本地没有。安装? [Y/n] " "$rel"
@@ -204,10 +224,11 @@ if [ "$MODE" = "merge" ]; then
       fi
       mkdir -p "$(dirname "$target")"; cp -a "$src" "$target"
       MODIFIED_FILES+=("新增 $rel"); echo "    ✅ 已安装 $target"
+      case "$rel" in agent/models.json|agent/auth.json|*/agent-mcp.json) echo "       ℹ 该文件里是 PASTE_YOUR_... 占位符，记得填真实 Key（明文）" ;; esac
       continue
     fi
 
-    if cmp -s "$src" "$target"; then continue; fi
+    if files_equal "$src" "$target"; then continue; fi
 
     # 二进制文件（如 fff 索引）不做逐块融合，只允许 A/B
     if ! grep -qI "" "$target" 2>/dev/null || ! grep -qI "" "$src" 2>/dev/null; then
@@ -264,8 +285,9 @@ if [ "$MODE" = "merge" ]; then
     <(cd "$PI_AGENT_DIR" && find . -path ./sessions -prune -o -type f -print | sed 's|^\./|agent/|' | sort) \
     <(cd "$HERE" && git ls-files agent | sort) | head -20 | sed 's/^/    /' || true
 
-  input_all_keys
-  fix_legacy_mcp_placeholder
+  protect_settings "$MERGE_BAK/settings.json"
+  ensure_auth_json
+  check_placeholders
 
   echo ""
   echo "=============================================="
@@ -273,7 +295,8 @@ if [ "$MODE" = "merge" ]; then
   [ "${#MODIFIED_FILES[@]}" -gt 0 ] && printf '    变更 %d 项:\n%s\n' "${#MODIFIED_FILES[@]}" "$(printf '      %s\n' "${MODIFIED_FILES[@]}")"
   [ "${#SKIPPED_FILES[@]}" -gt 0 ] && printf '    保留本地 %d 项（如需采用仓库可重跑并选 A）:\n%s\n' "${#SKIPPED_FILES[@]}" "$(printf '      %s\n' "${SKIPPED_FILES[@]}")"
   echo "    合并前备份: $MERGE_BAK"
-  echo "    重启 pi / 新开终端后生效（密钥环境变量需重新 source）。"
+  echo "    模型/鉴权文件未同步（保留本机版本）: ${NO_SYNC_FILES[*]}"
+  echo "    重启 pi 后生效。"
   echo "=============================================="
   exit 0
 fi
@@ -282,6 +305,7 @@ fi
 # 模式二：全新覆盖（--fresh，旧行为）
 # =============================================================================
 echo "==> 全新覆盖模式：备份现有配置后整体替换"
+BAK=""
 if [ -d "$PI_AGENT_DIR" ] && [ -n "$(ls -A "$PI_AGENT_DIR" 2>/dev/null)" ]; then
   BAK="$PI_AGENT_DIR.bak-$TIMESTAMP"
   mv "$PI_AGENT_DIR" "$BAK"
@@ -296,7 +320,21 @@ fi
 
 mkdir -p "$PI_AGENT_DIR"
 cp -a "$HERE/agent/." "$PI_AGENT_DIR/"
-echo "  已还原: settings.json / models.json / extensions / extensions-disabled / skills 等"
+echo "  已还原: settings.json / extensions / extensions-disabled / skills / npm 等"
+
+# 模型 / 鉴权文件不参与同步：从备份还原本机版本（无备份则保留仓库模板）
+if [ -n "$BAK" ] && [ -d "$BAK" ]; then
+  for rel in "${NO_SYNC_FILES[@]}"; do
+    name="${rel#agent/}"
+    if [ -f "$BAK/$name" ]; then
+      cp -a "$BAK/$name" "$PI_AGENT_DIR/$name"
+      echo "  已保留本机 $name（模型/鉴权文件不同步）"
+    fi
+  done
+  protect_settings "$BAK/settings.json"
+else
+  echo "  ℹ 未发现旧配置：models.json / auth.json 使用仓库模板（Key 为占位符，需自行填明文）"
+fi
 
 # bin/ 平台检测（fd/rg 是 Linux x86-64 二进制）
 if [ -d "$PI_AGENT_DIR/bin" ]; then
@@ -323,17 +361,13 @@ restore_mcp config-mcp.json     "$HOME/.config/mcp/mcp.json"
 restore_mcp agents-mcp.json     "$HOME/.agents/mcp.json"
 restore_mcp agents-mcp-mcp.json "$HOME/.agents/mcp/mcp.json"
 
-# auth.json：不存在时从 example 生成（$PI_*_API_KEY 环境变量引用，无明文）
-if [ ! -f "$PI_AGENT_DIR/auth.json" ] && [ -f "$PI_AGENT_DIR/auth.json.example" ]; then
-  cp "$PI_AGENT_DIR/auth.json.example" "$PI_AGENT_DIR/auth.json"
-  chmod 600 "$PI_AGENT_DIR/auth.json"
-  echo "  已从 auth.json.example 生成 auth.json（\$PI_*_API_KEY 环境变量引用）"
-fi
+ensure_auth_json
 
 chmod 600 "$PI_AGENT_DIR/models.json" "$PI_AGENT_DIR/mcp.json" "$PI_AGENT_DIR/auth.json" 2>/dev/null || true
 
-# 兼容旧占位符
-fix_legacy_mcp_placeholder
+check_placeholders
+
+# 密钥不再询问：明文策略下直接把 Key 写进 models.json / auth.json / mcp.json 即可
 
 # npm 包重装（需联网）
 if [ -f "$PI_AGENT_DIR/extensions/bash-guard/package.json" ]; then
@@ -358,13 +392,12 @@ if [ -f "$PI_AGENT_DIR/npm/package.json" ]; then
   fi
 fi
 
-# 密钥手动输入
-input_all_keys
+# 密钥不再询问：明文策略下直接把 Key 写进 models.json / auth.json / mcp.json 即可
 
 echo ""
 echo "=============================================="
 echo " ✅ 全新覆盖还原完成！现在启动 pi 即可。"
 echo "    首次启动会自动安装 settings.json 中声明的全部 packages，"
 echo "    并加载扩展 / Skills / MCP 配置。"
-echo "    密钥位于 $SECRETS_FILE（如跳过输入可稍后补填）。"
+echo "    模型/鉴权文件已保留本机版本；仓库只提供带 PASTE_YOUR_... 占位符的模板。"
 echo "=============================================="

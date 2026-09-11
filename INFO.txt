@@ -1,36 +1,45 @@
 Pi 配置备份
 =====================================
-备份时间 : 2026-09-10 01:10:00
+备份时间 : 2026-09-11 11:00:00
 源平台   : Linux x86_64 (WSL2)
 pi 版本  : 0.85.1
-MCP 配置 : 1 个文件（mcp/agent-mcp.json，高德 amap，key 已脱敏为 ${PI_AMAP_MCP_KEY} 占位符）
+MCP 配置 : 1 个文件（mcp/agent-mcp.json，高德 amap，key 为 PASTE_YOUR_AMAP_MCP_KEY 占位符）
 node_modules : 未包含(还原时联网重装)
 
-本次更新要点（相对 2026-09-10 01:10 版）:
+本次更新要点（相对 2026-09-10 版）:
+- 鉴权改为「明文直填」: 彻底移除 $PI_*_API_KEY / ${PI_AMAP_MCP_KEY} 环境变量引用与
+  ~/.pi/secrets/pi-secrets.env 机制。各机器把 Key 明文写进自己的
+  models.json（apiKey 字段）/ auth.json / mcp.json；还原时不再询问密钥、不再注入 shell source。
+  仓库（public）中这些位置只保留 PASTE_YOUR_... 占位符，真 Key 一律不入库。
+- 新增「同步范围」规则: 还原只同步 插件 extensions/、skills/、mcp/、脚本、npm 包清单，
+  以及 settings.json 的非模型字段。以下内容永不参与覆盖（--fresh 也从备份还原）:
+    agent/models.json、agent/models-store.json、agent/auth.json，
+    以及 settings.json 的 defaultProvider / defaultModel / defaultThinkingLevel
+- restore.sh: 删除 ensure_key / input_all_keys / ensure_shell_source / 旧占位符注入等代码；
+  新增 is_no_sync 跳过逻辑、protect_settings（保留本地默认模型字段）、
+  check_placeholders（列出未填占位符）、ensure_auth_json（缺失时从模板生成）
+- restore.ps1: 同步上述策略（2b 段还原本机 models/auth/models-store，
+  4b 段改为占位符检查，不再交互询问密钥）
+- agent/auth.json.example: 改为明文模板（sk-PASTE_YOUR_*_KEY）
+- mcp/agent-mcp.json: ${PI_AMAP_MCP_KEY} → PASTE_YOUR_AMAP_MCP_KEY
+- README.md / AI-RESTORE.md: 新增「同步范围」章节，重写密钥章节为明文策略
+
+上一次更新要点（2026-09-10，其中密钥机制部分已被本次取代）:
 - 新增供应商 zhiji（智己 API api.zhiji.pro）: models.json 增加 gpt-5.6-sol / gpt-5.6-terra /
-  gpt-5.5 / gpt-5.4 四个模型；密钥走 auth.json 的 $PI_ZHIJI_API_KEY 引用（auth.json.example、
-  restore.sh ensure_key、README/AI-RESTORE 密钥表已同步）
+  gpt-5.5 / gpt-5.4 四个模型
 - check-model.ts 重构: /check_model 改用 getAvailable() 仅列出已配置凭据的供应商；输出改为
-  按供应商分组、按延迟排序的紧凑报告；错误信息汉化归类（超时/developer 角色不兼容/HTTP
-  状态码）；模型注册表 refresh 改为 await
+  按供应商分组、按延迟排序的紧凑报告；错误信息汉化归类；模型注册表 refresh 改为 await
 - npm/package-lock.json 同步: @narumitw/pi-btw 锁定 0.58.1
-- 密钥机制升级: models.json（suixiang/agentrouter/modelflare）、auth.json（deepseek/
-  fluxionai）、mcp.json（高德）全部改为 $PI_*_API_KEY / ${PI_AMAP_MCP_KEY} 环境变量引用；
-  密钥唯一存放点为各机器 ~/.pi/secrets/pi-secrets.env（600，不入库），还原时由
-  restore.sh 交互输入
-- restore.sh 重写: 新增交互合并模式（本地 vs 仓库逐文件对比，A=远程为主 / B=本地为主 /
-  C=融合逐块挑选冲突，python3 实现）；--fresh 保留旧覆盖行为；短输入误操作防护；
-  非交互终端自动降级
+- restore.sh 重写: 新增交互合并模式（本地 vs 仓库逐文件对比，A/B/C，python3 实现）；
+  --fresh 保留旧覆盖行为；非交互终端自动降级
 - extensions/ 归档 3 项到 extensions-disabled/（pi 不加载）: model-info-footer.ts
   （与 pi-powerline-footer 重复）、dedupe-status.ts（desktop-ui 已卸载）、mcp/
   （旧版本地客户端，由 pi-mcp-adapter 接管），附恢复说明 README
-- prompt-snippets 增强: 新增 continue-task.md 片段（继续被中断的任务）；插件支持
-  空输入回车直接发送激活片段（与 powerline 自定义编辑器兼容）
-- llm-wiki: 移除 youtube-transcript 外挂依赖，YouTube 改为手动粘贴模式（5 处引用同步更新）
-- 默认模型切换为 modelflare/glm-5.3-flash；@narumitw/pi-btw 升级 0.58.1
+- prompt-snippets 增强: 新增 continue-task.md 片段；插件支持空输入回车直接发送激活片段
+- llm-wiki: 移除 youtube-transcript 外挂依赖，YouTube 改为手动粘贴模式
 - .gitignore: 新增 agent/live-thinking.json、agent/deepseek-*.json（运行时文件）
 
 维持不变:
 - settings.json 主体 / AGENTS.md / keybindings.json / trust.json
-- models-store.json / fff 数据库: 跳过运行时数据更新
-- auth.json.example: $PI_*_API_KEY 引用模板
+- fff 数据库: 跳过运行时数据更新
+- agent/auth.json 仍被 .gitignore 排除（真 Key 不入库）

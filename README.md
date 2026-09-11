@@ -30,27 +30,39 @@ bash restore.sh --fresh    # 全新覆盖模式
 旧行为：把现有 `~/.pi/agent` 整体备份到 `~/.pi/agent.bak-<时间戳>` 后用仓库版本替换
 （`sessions/` 始终保留在原位，避免运行中的 pi 写会话报 ENOENT）。
 
-## 🔑 模型供应商密钥：手动输入，绝不入库
+## 🚫 同步范围：模型相关的一律不动
 
-两种模式的还原脚本最后都会**逐项询问密钥**（本地输入、不回显），写入：
+还原（`restore.sh` / `restore.ps1`）**只会覆盖**这些内容：
 
-```
-~/.pi/secrets/pi-secrets.env   # 目录 700 / 文件 600，被 shell 启动时自动 source
-```
+- `extensions/`（插件源码）、`skills/`（技能）、`mcp/`（MCP 配置）、`extensions-disabled/`
+- `npm/package.json`（插件包清单）、`restore.sh` / `restore.ps1`、`AI-RESTORE.md` 等脚本
+- `settings.json` 的**非模型字段**（主题、TUI 模式、packages 列表、快捷键等）
 
-| 变量 | 用途 | 被引用于 |
-|---|---|---|
-| `PI_SUIXIANG_API_KEY` | suixiang（sui-xiang.com） | `models.json` |
-| `PI_AGENTROUTER_API_KEY` | agentrouter（agentrouter.org） | `models.json` |
-| `PI_MODELFLARE_API_KEY` | modelflare（modelflare.dev） | `models.json` |
-| `PI_DEEPSEEK_API_KEY` | deepseek 官方 API | `auth.json` |
-| `PI_FLUXIONAI_API_KEY` | fluxionai | `auth.json` |
-| `PI_ZHIJI_API_KEY` | zhiji（智己 api.zhiji.pro） | `auth.json` |
-| `PI_AMAP_MCP_KEY` | 高德地图 MCP | `mcp.json` |
+**永远不同步**，本地已有就保持原样（`--fresh` 也会从备份还原回来）：
 
-- 配置文件里只保存 `$PI_*_API_KEY` / `${PI_AMAP_MCP_KEY}` **环境变量引用**（pi 原生支持，缺失时对应模型不可用），仓库中无任何明文密钥
-- 已配置的密钥回车即跳过；输入新值则覆盖（<16 字符的疑似误输入需二次确认）
-- **轮换密钥**：编辑 `pi-secrets.env` 对应行 → 重启 shell/pi；旧 Key 请到对应供应商后台吊销
+| 文件 / 字段 | 为什么 |
+|---|---|
+| `agent/models.json` | 各机器的 provider / model 定义不同 |
+| `agent/models-store.json` | 模型列表状态，属本机运行时数据 |
+| `agent/auth.json` | 明文密钥 |
+| `settings.json` 的 `defaultProvider` / `defaultModel` / `defaultThinkingLevel` | 默认模型由本机说了算 |
+
+> 一句话：**拉取仓库更新不会动你的模型配置**。模型怎么配、用哪个模型，永远由本机决定。
+
+## 🔑 密钥：明文直填，不用环境变量
+
+策略就一句话：**能用明文就用明文**。Key 直接（明文）写进本机配置文件，不做环境变量中转、不写 `~/.pi/secrets`、还原时也不再询问：
+
+| 文件 | 怎么写 |
+|---|---|
+| `~/.pi/agent/models.json` | provider 的 `apiKey` 字段直接写 `sk-...` |
+| `~/.pi/agent/auth.json` | 按 provider 明文写：`{"deepseek":{"type":"api_key","key":"sk-..."}}` |
+| `~/.pi/agent/mcp.json` | URL 里直接拼 key：`...?key=你的高德key` |
+
+- 本仓库（public）里这些位置**只有占位符** `sk-PASTE_YOUR_SUIXIANG_KEY` / `PASTE_YOUR_AMAP_MCP_KEY`，真 Key 一律不入库
+- 换机器时把 Key 粘贴进上面三个文件即可，**不用重启 shell、不用 source**
+- 若你以前用过 `pi-secrets.env` 那套：删掉 `~/.pi/secrets/`，并把 `~/.bashrc` / `~/.zshrc` 里那段自动 source 删掉即可（现在完全不需要）
+- 想换 Key：直接改这三个文件里的明文值，重启 pi 生效；旧 Key 到供应商后台吊销
 
 ## 🚀 AI 自动还原
 
@@ -69,10 +81,10 @@ pi（或任意带终端工具的 AI）会按 [AI-RESTORE.md](AI-RESTORE.md) 自�
 ```
 ├── agent/                     # = ~/.pi/agent 核心目录
 │   ├── settings.json          # 全局设置（主题、默认模型、packages 列表）
-│   ├── models.json            # 自定义 provider/model（密钥为 $PI_*_API_KEY 引用）
+│   ├── models.json            # 自定义 provider/model（apiKey 明文；同步时不动）
 │   ├── AGENTS.md              # 全局沟通规则
 │   ├── keybindings.json       # 自定义快捷键
-│   ├── auth.json.example      # auth.json 模板（$PI_*_API_KEY 引用）
+│   ├── auth.json.example      # auth.json 明文模板（PASTE_YOUR_... 占位符）
 │   ├── trust.json             # 项目信任列表
 │   ├── pi-fff.json            # fff 设置
 │   ├── extensions/            # 本地插件（bash-guard、context-progress-bar、
@@ -87,7 +99,7 @@ pi（或任意带终端工具的 AI）会按 [AI-RESTORE.md](AI-RESTORE.md) 自�
 │   ├── fff/                   # 文件访问频率索引
 │   └── bin/                   # fd/rg 二进制（Linux-x86_64，其他平台还原时自动清理）
 ├── mcp/
-│   └── agent-mcp.json         # → ~/.pi/agent/mcp.json（高德地图，${PI_AMAP_MCP_KEY} 引用）
+│   └── agent-mcp.json         # → ~/.pi/agent/mcp.json（高德地图，key 明文占位）
 ├── AI-RESTORE.md              # ⭐ AI 执行清单（还原时优先让 AI 读这个）
 ├── restore.sh                 # Linux/macOS 还原脚本（交互合并 / --fresh）
 ├── restore.ps1                # Windows 还原脚本
@@ -109,7 +121,8 @@ bash restore.sh            # 交互合并（对比本地与仓库，A/B/C 选择
 # bash restore.sh --fresh  # 或全新覆盖
 # Windows: powershell -ExecutionPolicy Bypass -File .\restore.ps1
 
-# 4. 按脚本提示输入各供应商密钥（或之后编辑 ~/.pi/secrets/pi-secrets.env）
+# 4. 把各供应商 Key 明文填进 ~/.pi/agent/models.json / auth.json / mcp.json
+#    （仓库模板里是 PASTE_YOUR_... 占位符；脚本结束时也会提示哪些还没填）
 
 # 5. 启动（首次启动自动安装 settings.json 中声明的 packages）
 pi
@@ -118,6 +131,13 @@ pi
 还原脚本会自动联网安装 bash-guard 依赖（shell-quote）和 npm 包清单依赖。
 
 ## 📝 更新日志
+
+### 2026-09-11
+
+- **密钥改为明文直填**：彻底移除 `~/.pi/secrets/pi-secrets.env` 与环境变量引用那一套 —— `models.json` / `auth.json` / `mcp.json` 现在直接写明文 Key，还原脚本不再逐项询问密钥、不再往 `.bashrc` / `.zshrc` 注入 source
+- **新增同步范围规则**：还原只同步插件 / Skill / MCP / 脚本，`models.json`、`models-store.json`、`auth.json` 以及 `settings.json` 的默认模型字段**一律不同步**（`--fresh` 也会从备份还原回来），避免拉取更新时冲掉本机模型配置
+- `auth.json.example`、`mcp/agent-mcp.json` 改为明文样式模板（`PASTE_YOUR_...` 占位符），仓库中依旧无任何真 Key
+- `restore.sh` / `restore.ps1` 结束时改为检查并列出仍未填的占位符
 
 ### 2026-09-10
 
@@ -136,9 +156,15 @@ pi
 
 ## ⚠️ 重要说明
 
-### 本仓库不含任何密钥（public 仓库）
+### 本仓库不含任何真 Key（public 仓库）
 
-- `agent/auth.json` 被 `.gitignore` 排除；仓库提供 `auth.json.example` 模板（`$PI_*_API_KEY` 引用）
-- `models.json` / `mcp.json` 中只有环境变量引用，无明文
-- 密钥唯一存放点：各机器本地的 `~/.pi/secrets/pi-secrets.env`（600 权限，不入库）
-- 若用 `/login` 重新登录某供应商，pi 会把新 Key 写回 `auth.json`（本地 600 文件，属正常行为）
+- `agent/auth.json` 被 `.gitignore` 排除；仓库只提供 `auth.json.example` 明文模板
+- `models.json` / `mcp/agent-mcp.json` 里的 Key 位置全是 `PASTE_YOUR_...` 占位符
+- 真 Key 只在各机器本地：`~/.pi/agent/models.json`、`auth.json`、`mcp.json`（明文，600 权限）
+- 用 `/login` 重新登录某供应商时，pi 会把新 Key 明文写回 `auth.json`，属正常行为
+
+### 模型配置不会被仓库覆盖
+
+- 同步范围见上文「🚫 同步范围」；`models.json` / `models-store.json` / `auth.json` 与
+  `settings.json` 的默认模型字段永不参与覆盖，本地已有就一定是本地说了算
+- 因此可以放心 `git pull` 拿插件 / Skill / MCP 更新，不用担心模型配置被改回去

@@ -21,7 +21,7 @@
 
 1. **先检测平台，再执行**：Linux 用 bash 命令，Windows 用 PowerShell 命令，禁止混用。
 2. **每一步都要验证**：执行后检查结果是否符合「验证」要求；失败则按「异常处理」修复或降级，不要静默跳过。
-3. **需要用户输入时停下询问**（见步骤 7 的 API 密钥），其余步骤自主完成。
+3. **需要用户输入时停下询问**（见步骤 7：仅当仍缺占位符时才需要用户提供 Key），其余步骤自主完成。
 4. **不要打印/记录 API 密钥**到任何日志或文件中。
 5. **所有路径变量化**：下文 `PI_SRC` = 配置来源目录，`PI_AGENT` = pi 配置目标目录。
 6. 全部完成后输出「还原报告」（见步骤 9）。
@@ -141,12 +141,46 @@ New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.pi\agent" | Out-Nul
 Copy-Item "$env:USERPROFILE\pi-config\agent\*" "$env:USERPROFILE\.pi\agent" -Recurse -Force
 ```
 
+### ⚠️ 不同步文件：模型 / 鉴权相关一律保留本机版本
+
+**同步只覆盖** 插件（`extensions/`）、Skill（`skills/`）、MCP（`mcp/`）、脚本、`npm/package.json`，
+以及 `settings.json` 的非模型字段。
+
+下面这些**永远不要用仓库版本覆盖本机已有的**（本机没有时才安装仓库模板）：
+`models.json`、`models-store.json`、`auth.json`，以及 `settings.json` 的
+`defaultProvider` / `defaultModel` / `defaultThinkingLevel`。
+
+```bash
+# Linux：上面的 cp 之后，把本机旧版本还原回来（$BAK = 步骤 3 的备份目录）
+for f in models.json models-store.json auth.json; do
+  [ -f "$BAK/$f" ] && cp -a "$BAK/$f" "$HOME/.pi/agent/$f"
+done
+# settings.json 的默认模型字段保持本机值（其他字段用仓库版本）
+python3 - "$BAK/settings.json" "$HOME/.pi/agent/settings.json" <<'PYEOF'
+import json, sys
+old = json.load(open(sys.argv[1], encoding="utf-8"))
+new = json.load(open(sys.argv[2], encoding="utf-8"))
+for k in ("defaultProvider", "defaultModel", "defaultThinkingLevel"):
+    if k in old:
+        new[k] = old[k]
+json.dump(new, open(sys.argv[2], "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+PYEOF
+```
+```powershell
+# Windows：同样从 $bak 恢复
+foreach ($f in @("models.json", "models-store.json", "auth.json")) {
+  if (Test-Path "$bak\$f") { Copy-Item "$bak\$f" "$env:USERPROFILE\.pi\agent\$f" -Force }
+}
+```
+
+> 用 `restore.sh` / `restore.ps1` 还原时脚本已内置这套逻辑，无需手工处理。
+
 ### ✅ 步骤 4 验证（全部必须存在）
 
 | 路径（相对 `PI_AGENT`） | 说明 |
 |---|---|
 | `settings.json` | 全局设置（含 11 个 packages） |
-| `models.json` | 自定义 provider/model（apiKey 为 `$PI_*_API_KEY` 环境变量引用，见步骤 7） |
+| `models.json` | 自定义 provider/model（apiKey 为明文或 `PASTE_YOUR_...` 占位符；本机已有则保留本机，见步骤 7） |
 | `models-store.json` | 模型存储 |
 | `AGENTS.md` | 全局沟通规则（中文） |
 | `keybindings.json` / `trust.json` / `pi-fff.json` | 快捷键 / 项目信任 / fff 设置 |
@@ -154,9 +188,9 @@ Copy-Item "$env:USERPROFILE\pi-config\agent\*" "$env:USERPROFILE\.pi\agent" -Rec
 | `skills/` | 13 个目录 |
 | `npm/package.json` + `npm/package-lock.json` | 包清单 |
 | `git/` | git 包缓存 |
-| `auth.json.example` | 密钥模板（不是密钥本体） |
+| `auth.json.example` | 明文密钥模板（值为 `PASTE_YOUR_...`，不是密钥本体） |
 
-> **预期缺失**（正常现象，不要报错）：`auth.json`（密钥，步骤 7 处理）。
+> **预期缺失**（正常现象，不要报错）：`auth.json`（明文密钥，步骤 7 处理；本机已有则不要覆盖）。
 > `sessions/` 按步骤 3 已保留在原位（旧会话历史，不随仓库分发）。
 
 ---
@@ -212,62 +246,56 @@ if (Test-Path "$env:USERPROFILE\pi-config\mcp\agent-mcp.json") {
 
 ### ✅ 步骤 6 验证
 
-- 仓库里有 `mcp/agent-mcp.json`（高德地图 amap 配置，key 为 `{env:AMAP_MCP_KEY}` 占位符）：
+- 仓库里有 `mcp/agent-mcp.json`（高德地图 amap 配置，key 为明文占位符 `PASTE_YOUR_AMAP_MCP_KEY`）：
   还原后确认 `PI_AGENT/mcp.json` 存在且为合法 JSON。
-- `mcp.json` 中的占位符 `${PI_AMAP_MCP_KEY}` 无需手工替换：设置好环境变量后，pi 运行时自动展开（步骤 7 处理）。
+- 本机 `mcp.json` 已存在（含明文 key）→ **保留本机版本**，不要用仓库模板覆盖。
+- 首次安装 → 把 URL 里的 `PASTE_YOUR_AMAP_MCP_KEY` 直接替换成真实高德 key（明文，见步骤 7）。
 - 仓库里没有 `mcp/` 文件时：跳过并在报告中注明「当前无 MCP 服务器配置」。
 
 ---
 
-## 7. API 密钥 — 需要用户参与 ⚠️
+## 7. API 密钥 — 明文直填（不再逐项输入）
 
-**密钥不在仓库中**（安全设计）。**本步骤在还原完成后立即执行：必须停下来提示用户手动输入/提供密钥，不得静默跳过。**
+**仓库里没有真 Key**：仓库的 `models.json` / `auth.json.example` / `mcp/agent-mcp.json` 中只有
+`PASTE_YOUR_...` 占位符。**密钥策略是明文**：Key 直接写在本机配置文件里 —— 不用环境变量、
+不写 `~/.pi/secrets/pi-secrets.env`、不需要 shell source。
 
-- 若用户是用 `restore.sh` / `restore.ps1` 还原的：脚本已内置交互询问，密钥已写入 `~/.pi/secrets/pi-secrets.env`（600 权限）。AI 只需**验证结果**（见下方「步骤 7 验证」），无需重复询问。
-- 若用户是通过 AI 本清单还原的：AI 必须主动提示用户输入以下密钥，并严格按 7.1 / 7.2 处理。
-
-### 7.1 供应商密钥 → `~/.pi/secrets/pi-secrets.env`
-
-**密钥不在仓库中**。所有配置文件只引用环境变量，密钥统一存放在 `~/.pi/secrets/pi-secrets.env`：
-
-| 变量 | 用途 | 引用处 |
+| 文件 | 怎么写 | Key 来源 |
 |---|---|---|
-| `PI_SUIXIANG_API_KEY` | suixiang | `models.json` |
-| `PI_AGENTROUTER_API_KEY` | agentrouter | `models.json` |
-| `PI_MODELFLARE_API_KEY` | modelflare | `models.json` |
-| `PI_DEEPSEEK_API_KEY` | deepseek 官方 | `auth.json` |
-| `PI_FLUXIONAI_API_KEY` | fluxionai | `auth.json` |
-| `PI_ZHIJI_API_KEY` | zhiji（智己 api.zhiji.pro） | `auth.json` |
-| `PI_AMAP_MCP_KEY` | 高德地图 MCP | `mcp.json` |
+| `PI_AGENT/models.json` | provider 的 `apiKey` 字段直接写明文 `sk-...` | 用户自己的 Key |
+| `PI_AGENT/auth.json` | `{"<provider>":{"type":"api_key","key":"sk-..."}}` | 用户自己的 Key |
+| `PI_AGENT/mcp.json` | URL 里直接拼 key：`...?key=<高德key>` | 用户自己的 Key |
 
-AI 引导用户创建（密钥值由用户输入，**AI 不得猜测/打印**）：
+### 7.1 优先复用本机已有的明文配置（**不要覆盖**）
 
-```bash
-mkdir -p ~/.pi/secrets && chmod 700 ~/.pi/secrets
-nano ~/.pi/secrets/pi-secrets.env   # 内容为若干行: export PI_XXX_API_KEY=... 
-chmod 600 ~/.pi/secrets/pi-secrets.env
-```
-
-并确保 shell 启动时自动加载（追加到 `~/.zshrc` 与 `~/.bashrc`，若尚无）：
+`models.json` / `models-store.json` / `auth.json` 是**不同步文件**：本机已有就保持原样
+（步骤 3 备份、步骤 4 已还原；用还原脚本时自动处理）。仅当本机确实没有 `auth.json` 时才从模板生成：
 
 ```bash
-if [ -f "$HOME/.pi/secrets/pi-secrets.env" ]; then
-  . "$HOME/.pi/secrets/pi-secrets.env"
-fi
+[ -f "$HOME/.pi/agent/auth.json" ] || cp "$HOME/.pi/agent/auth.json.example" "$HOME/.pi/agent/auth.json"
+chmod 600 "$HOME/.pi/agent/auth.json"
 ```
 
-`auth.json` 与 `models.json` 保持仓库中的 `$PI_*_API_KEY` 引用样式即可，**不要写入明文**。
-（若用户 `/login` 重新登录，pi 会把明文写回 `auth.json`，属 pi 正常行为，文件权限应为 600。）
+### 7.2 检查仍未填的占位符（需要用户参与 ⚠️）
 
-### 7.2 高德 MCP key（`PI_AMAP_MCP_KEY`）— 同样需要用户参与 ⚠️
+```bash
+grep -nE 'PASTE_YOUR_|sk-PASTE|[$][{]PI_|[{]env:' \
+  "$HOME/.pi/agent/models.json" "$HOME/.pi/agent/auth.json" "$HOME/.pi/agent/mcp.json" 2>/dev/null
+```
 
-`mcp.json` 的 URL 含 `${PI_AMAP_MCP_KEY}` 占位符。按 7.1 的方式把 key 写入 `pi-secrets.env`（`export PI_AMAP_MCP_KEY=...`）即可，pi 运行时自动展开。**AI 不得把 key 输出到日志/报告**。
+- **有命中** → 停下来提示用户：把命中的位置替换成真实 Key（明文），改完告知 AI 继续。
+  **AI 不得猜测 Key，也不得把 Key 写进日志 / 报告 / 会话记录。**
+- **无命中** → 本机 Key 已就绪，直接继续。
+
+> 用户暂时没有某家 Key 也可以继续：保留该处占位符，报告里注明「该 provider 不可用」，
+> 不要因此阻塞其他步骤。
 
 ### ✅ 步骤 7 验证
 
-- `~/.pi/secrets/pi-secrets.env` 存在、权限 600、包含需要的 `export PI_*` 行；shell 新开终端后 `echo ${PI_SUIXIANG_API_KEY:+set}` 输出 `set`。
-- `auth.json` / `models.json` / `mcp.json` 中无明文密钥（`grep -R 'sk-' ~/.pi/agent/*.json` 应无结果或仅命中 pi 自身缓存）。
-- 若用户暂不提供某密钥：保留 `$VAR` 引用并在报告中注明对应模型不可用，其余功能正常。
+- `auth.json` 存在、权限 600；`models.json` / `mcp.json` / `auth.json` 均为合法 JSON。
+- 三个文件中不再有 `PASTE_YOUR_` / `sk-PASTE` / `${PI_` / `{env:` 残留（用户明确暂不配置的除外）。
+- **不要**引导用户创建 `~/.pi/secrets/`，也**不要**往 `.bashrc` / `.zshrc` 注入 source 代码。
+- 模型配置以本机为准：不要用仓库 `models.json` 覆盖本机已有的（见步骤 4「不同步文件」）。
 
 ---
 
@@ -309,7 +337,7 @@ find "$HOME/.pi/agent/skills" -maxdepth 1 -type d | wc -l   # 应 >= 13
 ls "$HOME/.pi/agent/extensions/"                              # 8 个 ts 文件 + bash-guard/ + prompt-snippets/ + mcp/ 目录
 cat "$HOME/.pi/agent/settings.json" | python3 -m json.tool >/dev/null && echo "settings.json 合法 JSON"
 [ -f "$HOME/.pi/agent/auth.json" ] && echo "auth.json 存在" || echo "⚠ auth.json 缺失（可从 example 生成）"
-[ -f "$HOME/.pi/secrets/pi-secrets.env" ] && echo "pi-secrets.env 存在" || echo "⚠ pi-secrets.env 缺失（用户未配置密钥）"
+grep -qE 'PASTE_YOUR_|sk-PASTE|[{]env:' "$HOME/.pi/agent/models.json" "$HOME/.pi/agent/auth.json" "$HOME/.pi/agent/mcp.json" 2>/dev/null && echo "⚠ 仍有未填占位符（需用户提供明文 Key）" || echo "密钥占位符已填好"
 [ -f "$HOME/.pi/agent/mcp.json" ] && cat "$HOME/.pi/agent/mcp.json" | python3 -m json.tool >/dev/null && echo "mcp.json 存在且合法"
 pi --version
 ```
@@ -330,8 +358,9 @@ pi --version
 - 核心配置：✅ / ❌ <具体缺失项>
 - extensions：✅ 8 ts + 2 目录（本次新增：live-thinking / question / bash-guard / prompt-snippets）
 - skills：✅ N 个目录（当前 13，本次新增：analyze-sessions）
-- MCP 配置：✅ amap 已还原（key: 环境变量 AMAP_MCP_KEY 已设置 / 已替换 / ⚠ 占位符未填）
-- auth.json：✅ / ⚠ 未配置（用户需自行补密钥）
+- MCP 配置：✅ amap 已还原（key: 本机明文已就绪 / 保留本机版本 / ⚠ 占位符未填）
+- 密钥：✅ 本机明文已就绪 / ⚠ 有占位符待用户填（列出是哪几个 provider）
+- 模型配置：✅ 保留本机版本（不同步，未被仓库覆盖）
 - npm packages：✅ 已安装 N 个 / ⚠ 需 pi 首次启动自动安装
 - 旧配置备份位置：<.bak-* 路径>
 - 遗留问题：<列出所有未完成项及原因>
@@ -355,10 +384,13 @@ pi --version
 | 用户机器是 Linux ARM（如树莓派） | bin/ 已删除，提示 pi 会获取对应架构的 fd/rg |
 | 还原后扩展报错 | 检查 `extensions/` 文件是否完整 → 报告错误信息，不擅自改代码 |
 | 还原后 pi 报 ENOENT（`no such file or directory ... sessions/...jsonl`） | 原因：备份时把运行中的 pi 正在写入的 `sessions/` 目录 mv 走了，pi 按原路径追加会话日志失败。**旧会话文件并没有丢**，在 `.bak-*/sessions/` 里。处理：`mkdir -p ~/.pi/agent && mv ~/.pi/agent.bak-*/sessions ~/.pi/agent/`（把会话目录移回原位即可，无需重跑还原）。备份逻辑已更新为保留 sessions/ 在原位，新还原不会再出现此问题。 |
-| 用户无任何密钥 | 明确告知：pi 可启动，但对应 provider 无法调用；按步骤 7.1 引导用户把密钥写入 ~/.pi/secrets/pi-secrets.env 后重启 shell |
+| 用户无任何密钥 | 明确告知：pi 可启动，但对应 provider 无法调用；按步骤 7.2 引导用户把**明文** Key 直接填进 `models.json` / `auth.json` / `mcp.json`（不要再用环境变量那套） |
+| 配置里还有 `PASTE_YOUR_...` / `${PI_...}` 占位符 | 明文策略下需替换成真实 Key；用户暂时没有就先跳过，并在报告中注明对应模型不可用 |
+| 想确认模型配置没被同步冲掉 | `git -C ~/pi-config log --oneline -1` 与实际 `~/.pi/agent/models.json` 对比即可；不同步文件本地说了算 |
 
 ## 附录 B：更新已有还原（原机器配置变更后）
 
 1. 原机器重新打包：`~/pi-backup/make-backup.sh`（本地完整备份，含密钥）。
-2. 更新仓库：`git add -A && git commit -m "update" && git push`（仓库不含 auth.json/sessions）。
+2. 更新仓库：`git add -A && git commit -m "update" && git push`（仓库不含 auth.json / sessions，也不含任何真 Key）。
+   > **同步范围规则**：只推插件 / Skill / MCP / 脚本；模型与鉴权相关文件不要改、不要推，各机器自己保留。
 3. 新机器重新执行本清单（步骤 3 会自动备份旧配置）。

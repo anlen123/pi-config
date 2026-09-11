@@ -1,6 +1,8 @@
 {
-  "deepseek": { "type": "api_key", "key": "$PI_DEEPSEEK_API_KEY" },
-  "agentrouter": { "type": "api_key", "key": "$PI_AGENTROUTER_API_KEY" },
-  "fluxionai": { "type": "api_key", "key": "$PI_FLUXIONAI_API_KEY" },
-  "zhiji": { "type": "api_key", "key": "$PI_ZHIJI_API_KEY" }
+  "deepseek": { "type": "api_key", "key": "sk-PASTE_YOUR_DEEPSEEK_KEY" },
+  "suixiang": { "type": "api_key", "key": "sk-PASTE_YOUR_SUIXIANG_KEY" },
+  "agentrouter": { "type": "api_key", "key": "sk-PASTE_YOUR_AGENTROUTER_KEY" },
+  "fluxionai": { "type": "api_key", "key": "PASTE_YOUR_FLUXIONAI_KEY" },
+  "modelflare": { "type": "api_key", "key": "sk-PASTE_YOUR_MODELFLARE_KEY" },
+  "zhiji": { "type": "api_key", "key": "sk-PASTE_YOUR_ZHIJI_KEY" }
 }

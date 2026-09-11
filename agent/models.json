@@ -10,7 +10,7 @@
       "name": "SuiXiang",
       "baseUrl": "https://sui-xiang.com/v1",
       "api": "openai-completions",
-      "apiKey": "$PI_SUIXIANG_API_KEY",
+      "apiKey": "sk-PASTE_YOUR_SUIXIANG_KEY",
       "models": [
         {
           "id": "gpt-5.6-sol",
@@ -63,7 +63,7 @@
     "agentrouter": {
       "baseUrl": "https://agentrouter.org/v1",
       "api": "openai-completions",
-      "apiKey": "$PI_AGENTROUTER_API_KEY",
+      "apiKey": "sk-PASTE_YOUR_AGENTROUTER_KEY",
       "headers": {
         "Originator": "codex_cli_rs",
         "User-Agent": "codex_cli_rs/0.101.0 (Mac OS 26.0.1; arm64) Apple_Terminal/464",
@@ -263,7 +263,7 @@
       "name": "Modelflare",
       "baseUrl": "https://modelflare.dev/v1",
       "api": "openai-completions",
-      "apiKey": "$PI_MODELFLARE_API_KEY",
+      "apiKey": "sk-PASTE_YOUR_MODELFLARE_KEY",
       "models": [
         {
           "id": "claude-fable-5",

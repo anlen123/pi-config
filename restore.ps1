@@ -6,9 +6,14 @@
 #
 # 会做:
 #   1. 备份现有 %USERPROFILE%\.pi\agent 到 .bak-<时间戳>
-#   2. 还原 settings.json / auth.json / models.json / 扩展 / Skills / MCP 配置
-#   3. 清理备份中 Linux 专用的 bin/ 二进制
-#   4. 提示重装 npm packages（需联网；也可直接启动 pi 自动安装）
+#   2. 还原 settings.json / 扩展 / Skills / MCP 配置
+#   3. 模型与鉴权相关文件（models.json / models-store.json / auth.json）
+#      以及 settings.json 的默认模型字段不参与同步，一律保留本机版本
+#   4. 清理备份中 Linux 专用的 bin/ 二进制
+#   5. 提示重装 npm packages（需联网；也可直接启动 pi 自动安装）
+#
+# 密钥策略：明文。Key 直接写在 models.json / auth.json / mcp.json 里，
+# 不用环境变量、不写 secrets 文件；仓库里只有 PASTE_YOUR_... 占位符。
 # =============================================================================
 $ErrorActionPreference = "Stop"
 
@@ -25,6 +30,7 @@ if (-not (Test-Path (Join-Path $HERE "agent"))) {
 # ── 1. 备份现有配置 ─────────────────────────────────────────────────────────
 # 注意：sessions/ 是运行中的 pi 正在写入的会话目录，必须保留在原位，
 #       否则 Move-Item 之后运行中的 pi 追加会话日志会报 ENOENT（文件路径已不存在）。
+$bak = $null
 if (Test-Path $AgentDir) {
     $bak = "$AgentDir.bak-" + (Get-Date -Format "yyyyMMdd-HHmmss")
     Move-Item $AgentDir $bak
@@ -41,7 +47,47 @@ if (Test-Path $AgentDir) {
 # ── 2. 还原文件 ─────────────────────────────────────────────────────────────
 New-Item -ItemType Directory -Force -Path $AgentDir | Out-Null
 Copy-Item (Join-Path $HERE "agent\*") $AgentDir -Recurse -Force
-Write-Host "  已还原: settings.json / auth.json / models.json / AGENTS.md / extensions/ / skills/ 等"
+Write-Host "  已还原: settings.json / AGENTS.md / extensions/ / skills/ / npm 等"
+
+# ── 2b. 模型 / 鉴权文件不参与同步（从备份还原本机版本）─────────────────────
+$NoSync = @("models.json", "models-store.json", "auth.json")
+if ($bak -and (Test-Path $bak)) {
+    foreach ($name in $NoSync) {
+        $src = Join-Path $bak $name
+        if (Test-Path $src) {
+            Copy-Item $src (Join-Path $AgentDir $name) -Force
+            Write-Host "  已保留本机 $name（模型/鉴权文件不同步）"
+        }
+    }
+    # settings.json 中模型相关字段保持本地值
+    $oldSet = Join-Path $bak "settings.json"
+    $newSet = Join-Path $AgentDir "settings.json"
+    if ((Test-Path $oldSet) -and (Test-Path $newSet)) {
+        try {
+            $o = Get-Content $oldSet -Raw | ConvertFrom-Json
+            $n = Get-Content $newSet -Raw | ConvertFrom-Json
+            $changed = @()
+            foreach ($k in @("defaultProvider", "defaultModel", "defaultThinkingLevel", "models")) {
+                if ($o.PSObject.Properties.Name -contains $k) {
+                    if ($n.PSObject.Properties.Name -contains $k) {
+                        if ($n.$k -ne $o.$k) { $n.$k = $o.$k; $changed += $k }
+                    } else {
+                        $n | Add-Member -NotePropertyName $k -NotePropertyValue $o.$k
+                        $changed += $k
+                    }
+                }
+            }
+            if ($changed.Count -gt 0) {
+                $n | ConvertTo-Json -Depth 20 | Set-Content $newSet -Encoding UTF8
+                Write-Host "      ↳ 模型相关字段保持本地值: $($changed -join ', ')" -ForegroundColor DarkGray
+            }
+        } catch {
+            Write-Host "  ⚠ 解析 settings.json 失败，默认模型可能被仓库值覆盖：$($_.Exception.Message)" -ForegroundColor Yellow
+        }
+    }
+} else {
+    Write-Host "  ℹ 未发现旧配置：models.json / auth.json 使用仓库模板（Key 为占位符，需自行填明文）"
+}
 
 # ── 3. 清理 Linux 二进制（fd/rg 为 Linux x86-64 ELF）────────────────────────
 $binDir = Join-Path $AgentDir "bin"
@@ -66,56 +112,24 @@ Restore-Mcp "config-mcp.json"     (Join-Path $env:USERPROFILE ".config\mcp\mcp.j
 Restore-Mcp "agents-mcp.json"     (Join-Path $env:USERPROFILE ".agents\mcp.json")
 Restore-Mcp "agents-mcp-mcp.json" (Join-Path $env:USERPROFILE ".agents\mcp\mcp.json")
 
-# ── 4b. 密钥手动输入（还原后提示）──────────────────────────────────────
-# 高德 MCP key：环境变量 AMAP_MCP_KEY 优先，未设置时交互询问用户输入
-$mcpFile = Join-Path $AgentDir "mcp.json"
-if ((Test-Path $mcpFile) -and (Get-Content $mcpFile -Raw).Contains("{env:AMAP_MCP_KEY}")) {
-    if ($env:AMAP_MCP_KEY) {
-        $content = (Get-Content $mcpFile -Raw).Replace("{env:AMAP_MCP_KEY}", $env:AMAP_MCP_KEY)
-        Set-Content $mcpFile $content -NoNewline -Encoding UTF8
-        Write-Host "  ✅ 已注入 AMAP_MCP_KEY 到 mcp.json（amap 高德地图）" -ForegroundColor Green
-    } else {
-        Write-Host ""
-        Write-Host "==> 检测到高德地图 MCP key 未配置（mcp.json 中为 {env:AMAP_MCP_KEY} 占位符）。"
-        $ans = Read-Host "    是否现在手动输入高德 Web服务 key？[y/N]"
-        if ($ans -match '^[Yy]') {
-            $secure = Read-Host "    请输入高德 Web服务 key（输入不回显）" -AsSecureString
-            if ($secure) {
-                $plain = (New-Object System.Net.NetworkCredential('', $secure)).Password
-                $content = (Get-Content $mcpFile -Raw).Replace("{env:AMAP_MCP_KEY}", $plain)
-                Set-Content $mcpFile $content -NoNewline -Encoding UTF8
-                Write-Host "  ✅ 已写入高德 Web服务 key 到 mcp.json（amap）" -ForegroundColor Green
-            } else {
-                Write-Host "  ⚠ 未输入 key，保留占位符。可设置环境变量 AMAP_MCP_KEY 后重跑 restore.ps1，或手动编辑 mcp.json。" -ForegroundColor Yellow
-            }
-        } else {
-            Write-Host "  已跳过。可设置环境变量 AMAP_MCP_KEY 后重跑 restore.ps1，或手动编辑 mcp.json。" -ForegroundColor Yellow
-        }
-    }
+# ── 4b. 明文密钥检查（不再交互询问）────────────────────────────────────────
+# 策略：Key 明文写在 models.json / auth.json / mcp.json 里，无环境变量中转。
+# auth.json 缺失时从 example 生成明文模板
+$authFile = Join-Path $AgentDir "auth.json"
+$authExample = Join-Path $AgentDir "auth.json.example"
+if ((-not (Test-Path $authFile)) -and (Test-Path $authExample)) {
+    Copy-Item $authExample $authFile -Force
+    Write-Host "  已从 auth.json.example 生成 auth.json（明文模板，需填真实 Key）"
 }
 
-# auth.json（deepseek / agentrouter / fluxionai API 密钥）：不存在时提示/询问用户
-$authFile = Join-Path $AgentDir "auth.json"
-if (-not (Test-Path $authFile)) {
-    Write-Host ""
-    Write-Host "==> auth.json 不存在（含 deepseek / agentrouter / fluxionai API 密钥）。"
-    $ans = Read-Host "    是否现在手动输入？[y/N]"
-    if ($ans -match '^[Yy]') {
-        $dk = Read-Host "    deepseek API key（输入不回显）" -AsSecureString
-        $ar = Read-Host "    agentrouter API key（输入不回显）" -AsSecureString
-        $fx = Read-Host "    fluxionai API key（输入不回显）" -AsSecureString
-        $auth = @{}
-        if ($dk) { $auth["deepseek"] = @{ type = "api_key"; key = (New-Object System.Net.NetworkCredential('', $dk)).Password } }
-        if ($ar) { $auth["agentrouter"] = @{ type = "api_key"; key = (New-Object System.Net.NetworkCredential('', $ar)).Password } }
-        if ($fx) { $auth["fluxionai"] = @{ type = "api_key"; key = (New-Object System.Net.NetworkCredential('', $fx)).Password } }
-        if ($auth.Count -gt 0) {
-            $auth | ConvertTo-Json | Set-Content $authFile -Encoding UTF8
-            Write-Host "  ✅ 已写入 auth.json" -ForegroundColor Green
-        } else {
-            Write-Host "  ⚠ 未输入任何 key，auth.json 未生成" -ForegroundColor Yellow
-        }
-    } else {
-        Write-Host "  已跳过。还原后请手动补充 auth.json（参考 agent/auth.json.example 或从原电脑复制）。" -ForegroundColor Yellow
+$placeholderPattern = 'PASTE_YOUR_|sk-PASTE|\$\{PI_|\$PI_[A-Z_]+_API_KEY|\{env:'
+foreach ($f in @((Join-Path $AgentDir "models.json"), $authFile, (Join-Path $AgentDir "mcp.json"))) {
+    if (-not (Test-Path $f)) { continue }
+    $hits = Select-String -Path $f -Pattern $placeholderPattern -ErrorAction SilentlyContinue
+    if ($hits) {
+        Write-Host "  ⚠ $f 中仍有未填的占位符：" -ForegroundColor Yellow
+        $hits | ForEach-Object { Write-Host ("      " + $_.LineNumber + ": " + $_.Line.Trim()) }
+        Write-Host "    → 现在用明文：把真实 Key 直接粘贴替换掉占位符即可（不需要环境变量 / secrets 文件）。" -ForegroundColor Yellow
     }
 }
 
@@ -152,4 +166,5 @@ Write-Host ""
 Write-Host "==============================================" -ForegroundColor Green
 Write-Host " ✅ 还原完成！现在启动 pi 即可。" -ForegroundColor Green
 Write-Host "    首次启动会自动安装 settings.json 中声明的全部 packages。" -ForegroundColor Green
+Write-Host "    模型/鉴权文件已保留本机版本（不同步）；仓库只提供带 PASTE_YOUR_... 占位符的模板。" -ForegroundColor Green
 Write-Host "==============================================" -ForegroundColor Green
