@@ -70,6 +70,9 @@ NO_SYNC_FILES=(
   "agent/models.json"
   "agent/models-store.json"
   "agent/auth.json"
+  "agent/fff/frecency/data.mdb"
+  "agent/fff/frecency/lock.mdb"
+  "agent/fff/history/lock.mdb"
 )
 SETTINGS_PROTECT_KEYS='["defaultProvider","defaultModel","defaultThinkingLevel","models"]'
 

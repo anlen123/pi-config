@@ -80,6 +80,7 @@ Windows 同款参数：`powershell -ExecutionPolicy Bypass -File .\restore.ps1 -
 | `agent/models.json` | 各机器的 provider / model 定义不同 |
 | `agent/models-store.json` | 模型列表状态，属本机运行时数据 |
 | `agent/auth.json` | 明文密钥 |
+| `agent/fff/**/*.mdb` | frecency/history 运行时数据库与锁文件 |
 | `settings.json` 的 `defaultProvider` / `defaultModel` / `defaultThinkingLevel` | 默认模型由本机说了算 |
 
 > 一句话：**拉取仓库更新不会动你的模型配置**。模型怎么配、用哪个模型，永远由本机决定。
@@ -195,6 +196,8 @@ pi
 - 合并引擎增强：MCP 配置比较**忽略 key 值**（本机真实 key vs 仓库占位符不再被当成差异）；
   采用仓库版 MCP 模板时**自动保留本机 key**；仓库里未 `git add` 的文件会提示"不参与同步"
 - `.gitignore`：`win-notify.json` / `live-tool-output.json` 归入本地运行时状态
+- `agent/fff/**/*.mdb`（frecency / history 运行时库与锁文件）纳入"不同步"：不再作为二进制差异反复提示，
+  也不会被仓库版本覆盖；新增 `--status --list` 可逐条列出差异文件
 
 ### 2026-09-10
 

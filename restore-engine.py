@@ -37,6 +37,15 @@ import sys
 import time
 
 NO_SYNC = ("agent/models.json", "agent/models-store.json", "agent/auth.json")
+
+
+def is_no_sync(rel: str) -> bool:
+    """模型 / 鉴权 / 运行时数据库：本地已有就永不覆盖"""
+    if rel in NO_SYNC:
+        return True
+    if rel.startswith("agent/fff/") and rel.endswith(".mdb"):   # frecency/history 运行时库 + 锁文件
+        return True
+    return False
 PROTECT_KEYS = ("defaultProvider", "defaultModel", "defaultThinkingLevel", "models")
 MANIFEST_NAME = ".pi-config-sync.json"
 PLACEHOLDER_RE = ("PASTE_YOUR_", "sk-PASTE", "${PI_", "$PI_", "{env:")
@@ -294,7 +303,7 @@ def build_entries(repo_root, agent_dir, home, manifest, only):
         src = os.path.join(repo_root, rel)
         if not os.path.isfile(src):
             continue
-        is_nosync = rel in NO_SYNC
+        is_nosync = is_no_sync(rel)
         protected = False
         if not os.path.exists(target):
             status = "missing"          # 本机没有 → 装仓库模板（即使它是模型/鉴权文件）

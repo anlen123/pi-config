@@ -36,6 +36,7 @@ node_modules : 未包含(还原时联网重装)
   4b 段改为占位符检查，不再交互询问密钥）
 - agent/auth.json.example: 改为明文模板（sk-PASTE_YOUR_*_KEY）
 - mcp/agent-mcp.json: ${PI_AMAP_MCP_KEY} → PASTE_YOUR_AMAP_MCP_KEY
+- fff 运行时库（*.mdb）纳入不同步；--status --list 可列明细
 - README.md / AI-RESTORE.md: 新增「同步范围」章节，重写密钥章节为明文策略
 
 上一次更新要点（2026-09-10，其中密钥机制部分已被本次取代）:
