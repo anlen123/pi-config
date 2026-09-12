@@ -28,7 +28,7 @@
       "cache_read"
     ]
   },
-  "tuiMode": "regular",
+  "tuiMode": "fullscreen",
   "defaultProjectTrust": "ask",
   "compaction": {
     "enabled": true

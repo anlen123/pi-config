@@ -175,6 +175,13 @@ pi
 
 ## 📝 更新日志
 
+### 2026-09-12
+
+- 同步本机 `live-tool-output.ts`，并将 `settings.json` 的 `tuiMode` 更新为 `fullscreen`；默认模型字段保持仓库原值。
+- 新增 `extensions/pi-tool-display/config.json` 与 `obscura-mcp-autostart.ts`。
+- MCP 模板新增 `local-mcp`（`http://127.0.0.1:8080/mcp`），高德 Key 仍保留占位符。
+- Obscura 自动启动插件依赖本机另行安装的 `/opt/obscura/obscura` 或用户级 `obscura-mcp` systemd 服务；仓库不包含该二进制或服务配置。换机时需先安装依赖，或禁用此扩展及 `local-mcp`。默认日志路径 `/var/log/obscura-mcp.log` 也需要写权限。
+
 ### 2026-09-11
 
 - **密钥改为明文直填**：彻底移除 `~/.pi/secrets/pi-secrets.env` 与环境变量引用那一套 —— `models.json` / `auth.json` / `mcp.json` 现在直接写明文 Key，还原脚本不再逐项询问密钥、不再往 `.bashrc` / `.zshrc` 注入 source

@@ -3,6 +3,9 @@
     "amap-maps-streamableHTTP": {
       "type": "http",
       "url": "https://mcp.amap.com/mcp?key=PASTE_YOUR_AMAP_MCP_KEY"
+    },
+    "local-mcp": {
+      "url": "http://127.0.0.1:8080/mcp"
     }
   }
 }
