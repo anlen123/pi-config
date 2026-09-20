@@ -1,0 +1,54 @@
+{
+  "deepseek": {
+    "type": "api_key",
+    "key": "sk-"
+  },
+  "aihub": {
+    "type": "api_key",
+    "key": "sk-"
+  },
+  "fluxionai": {
+    "type": "api_key",
+    "key": ""
+  },
+  "zhiji": {
+    "type": "api_key",
+    "key": "sk-"
+  },
+  "modelflare-2": {
+    "type": "api_key",
+    "key": "sk-"
+  },
+  "modelflare-3": {
+    "type": "api_key",
+    "key": "sk-"
+  },
+  "modelflare-1": {
+    "type": "api_key",
+  },
+  "key": "sk-"
+  "modelflare-4": {
+    "type": "api_key",
+    "key": "sk-"
+  },
+  "soulecho": {
+    "type": "api_key",
+    "key": "sk-"
+  },
+  "suixiang": {
+    "type": "api_key",
+    "key": "sk-"
+  },
+  "agentrouter": {
+    "type": "api_key",
+    "key": "sk-"
+  },
+  "volcengine": {
+    "type": "api_key",
+    "key": "ark--0f2b-446c-9338-e15a9c4eb9ad-fb04e"
+  },
+  "oppo": {
+    "type": "api_key",
+    "key": "personal-"
+  }
+}

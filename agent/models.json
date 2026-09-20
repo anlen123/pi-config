@@ -1,0 +1,605 @@
+{
+  "providers": {
+    "deepseek": {
+      "compat": {
+        "supportsLongCacheRetention": true,
+        "sendSessionAffinityHeaders": true
+      }
+    },
+    "aihub": {
+      "name": "AIHub",
+      "baseUrl": "http://127.0.0.1:8799/v1",
+      "api": "openai-completions",
+      "apiKey": "placeholder",
+      "models": [
+        {
+          "id": "gpt-5.5",
+          "name": "GPT 5.5",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "name": "GPT 5.6 Sol",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "name": "GPT 5.6 Terra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-6-astra",
+          "name": "GPT 6 Astra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        }
+      ]
+    },
+    "fluxionai": {
+      "name": "FluxionAI",
+      "baseUrl": "https://fluxionai.space/v1",
+      "api": "openai-completions",
+      "apiKey": "placeholder",
+      "models": [
+        {
+          "id": "gpt-5.6-sol",
+          "name": "GPT 5.6 Sol",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "name": "GPT 5.6 Terra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-6-astra",
+          "name": "GPT 6 Astra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        }
+      ],
+      "compat": {
+        "supportsStore": false
+      }
+    },
+    "suixiang": {
+      "name": "SuiXiang",
+      "baseUrl": "https://www.sui-xiang.net/v1",
+      "api": "openai-completions",
+      "apiKey": "placeholder",
+      "models": [
+        {
+          "id": "codex-auto-review",
+          "name": "Codex Auto Review",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        }
+      ],
+      "compat": {
+        "sendSessionAffinityHeaders": true
+      }
+    },
+    "zhiji": {
+      "name": "智己 API",
+      "baseUrl": "https://api.zhiji.pro/v1",
+      "api": "openai-completions",
+      "apiKey": "placeholder",
+      "models": [
+        {
+          "id": "gpt-5.5",
+          "name": "GPT 5.5",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "name": "GPT 5.6 Sol",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "name": "GPT 5.6 Terra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-6-astra",
+          "name": "GPT 6 Astra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        }
+      ],
+      "compat": {
+        "supportsStore": false,
+        "sendSessionAffinityHeaders": true
+      }
+    },
+    "modelflare-2": {
+      "name": "ModelFlare（账号 2）",
+      "baseUrl": "https://modelflare.dev/v1",
+      "api": "openai-completions",
+      "apiKey": "placeholder",
+      "models": [
+        {
+          "id": "gpt-5.5",
+          "name": "GPT 5.5",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "name": "GPT 5.6 Sol",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "name": "GPT 5.6 Terra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-6-astra",
+          "name": "GPT 6 Astra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        }
+      ]
+    },
+    "modelflare-3": {
+      "name": "ModelFlare（账号 3）",
+      "baseUrl": "https://modelflare.dev/v1",
+      "api": "openai-completions",
+      "apiKey": "placeholder",
+      "models": [
+        {
+          "id": "codex-auto-review",
+          "name": "Codex Auto Review",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.5",
+          "name": "GPT 5.5",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "name": "GPT 5.6 Sol",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "name": "GPT 5.6 Terra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-6-astra",
+          "name": "GPT 6 Astra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        }
+      ]
+    },
+    "modelflare-1": {
+      "name": "ModelFlare（账号 1）",
+      "baseUrl": "https://modelflare.dev/v1",
+      "api": "openai-completions",
+      "apiKey": "placeholder",
+      "models": [
+        {
+          "id": "codex-auto-review",
+          "name": "Codex Auto Review",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.5",
+          "name": "GPT 5.5",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "name": "GPT 5.6 Sol",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "name": "GPT 5.6 Terra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-6-astra",
+          "name": "GPT 6 Astra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        }
+      ]
+    },
+    "modelflare-4": {
+      "name": "ModelFlare（账号 4）",
+      "baseUrl": "https://modelflare.dev/v1",
+      "api": "openai-completions",
+      "apiKey": "placeholder",
+      "models": [
+        {
+          "id": "codex-auto-review",
+          "name": "Codex Auto Review",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.5",
+          "name": "GPT 5.5",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "name": "GPT 5.6 Sol",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "name": "GPT 5.6 Terra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-6-astra",
+          "name": "GPT 6 Astra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        }
+      ]
+    },
+    "soulecho": {
+      "name": "SoulEcho",
+      "baseUrl": "https://ai.soulecho.cc/v1",
+      "api": "openai-completions",
+      "apiKey": "placeholder",
+      "models": [
+        {
+          "id": "gpt-5.5",
+          "name": "GPT 5.5",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "name": "GPT 5.6 Sol",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "name": "GPT 5.6 Terra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-6-astra",
+          "name": "GPT 6 Astra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        }
+      ]
+    },
+    "agentrouter": {
+      "name": "AgentRouter",
+      "baseUrl": "http://127.0.0.1:8318/v1",
+      "api": "openai-completions",
+      "apiKey": "placeholder",
+      "models": [
+        {
+          "id": "claude-opus-4-8",
+          "name": "claude opus 4 8",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 1000000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "claude-opus-5",
+          "name": "claude opus 5",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 1000000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "deepseek-v4-flash",
+          "name": "deepseek v4 flash",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 1000000,
+          "maxTokens": 384000
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "name": "GPT 5.6 Sol",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-6-astra",
+          "name": "GPT 6 Astra",
+          "reasoning": true,
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 272000,
+          "maxTokens": 128000,
+          "api": "openai-responses"
+        }
+      ],
+      "headers": {
+        "Accept-Encoding": "identity"
+      },
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false
+      }
+    }
+    ,"volcengine": {
+      "name": "火山模型",
+      "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+      "api": "openai-completions",
+      "apiKey": "placeholder",
+      "models": [
+        {
+          "id": "glm-5-3-flash-260828",
+          "name": "GLM 5.3 Flash",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 1048576,
+          "maxTokens": 131072
+        },
+        {
+          "id": "deepseek-v4-1-flash-260910",
+          "name": "DeepSeek V4.1 Flash",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 1048576,
+          "maxTokens": 393216
+        }
+      ],
+      "headers": {
+        "Accept-Encoding": "identity"
+      }
+    },
+    "oppo": {
+      "name": "OPPO Model Plaza",
+      "baseUrl": "https://oppo-cloud-llm-personal-sgp.oppoer.me/personal/openai/api/v1",
+      "api": "openai-responses",
+      "apiKey": "placeholder",
+      "models": [
+        {
+          "id": "gpt-5.6-luna",
+          "name": "GPT 5.6 Luna",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "name": "GPT 5.6 Terra",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "name": "GPT 5.6 Sol",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 272000,
+          "maxTokens": 128000
+        }
+      ],
+      "headers": {
+        "Accept-Encoding": "identity"
+      }
+    }
+  }
+}

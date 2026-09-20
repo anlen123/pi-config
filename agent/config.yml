@@ -1,0 +1,35 @@
+defaultProvider: deepseek
+defaultModel: deepseek-flash
+defaultThinkingLevel: high
+quietStartup: false
+hideThinkingBlock: true
+skills:
+  []
+tuiMode: fullscreen
+defaultProjectTrust: ask
+compaction:
+  enabled: true
+enableSkillCommands: true
+externalEditor: nvim
+
+# ═══ 代理设置方式（走代理 / 不走代理）═══
+# Pi 与 OMP 不同：Pi 只有【全局】代理开关，没有按供应商代理。
+#
+# 【不走代理 · 默认】不写 httpProxy（下面这行保持注释），且 models.json 里供应商用官方 https 地址
+#   # httpProxy: http://172.25.80.1:7892
+#
+# 【走代理 · 全局】设了 httpProxy 就等于给整个进程设 HTTP_PROXY/HTTPS_PROXY，所有供应商都经代理：
+#   httpProxy: http://172.25.80.1:7892          # 本机宿主机代理；非必要不要开
+#
+# 【走代理 · 只让某一个供应商】把该供应商的 baseUrl 指向本机回环转发（本机转发再经宿主机代理出网）：
+#   ~/.pi/agent/models.json:
+#     "aihub":        { "baseUrl": "http://127.0.0.1:8799/v1" }   # aihub-forward → 宿主机代理 → aihub.top
+#     "agentrouter":  { "baseUrl": "http://127.0.0.1:8318/v1" }   # agentrouter-proxy → 宿主机代理
+#   其他供应商保持官方 https 地址即为直连。
+#
+# 【本机地址备忘】
+#   宿主机（Windows）代理               http://172.25.80.1:7892   # /etc/hosts 别名 winhost
+#   aihub-forward                       http://127.0.0.1:8799     # systemd: aihub-forward
+#   agentrouter-proxy                   http://127.0.0.1:8318     # systemd: agentrouter-proxy
+#   WSL 内 mihomo                       已停用，不再使用
+# ═══════════════════════════════════════

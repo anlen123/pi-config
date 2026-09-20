@@ -1,0 +1,25 @@
+{
+  "lastChangelogVersion": "0.86.0",
+  "theme": "dark",
+  "quietStartup": false,
+  "packages": [
+    "npm:pi-mcp-adapter",
+    "npm:pi-web-access",
+    "npm:@juicesharp/rpiv-ask-user-question",
+    "npm:pi-subagents",
+    "npm:@juicesharp/rpiv-todo",
+    "npm:pi-lens",
+    "npm:pi-background-tasks",
+    "npm:billion-context",
+    "npm:context-mode",
+    "npm:pi-goal-x",
+    "npm:@plannotator/pi-extension",
+    "npm:pi-memory",
+    "npm:@akagilnc/pi-workflow-roles",
+    "npm:@ff-labs/pi-fff",
+    "npm:@narumitw/pi-btw",
+    "../../../usr/lib/node_modules/@jmfederico/pi-web/dist/pi-packages/relays"
+  ],
+  "defaultProvider": "aihub",
+  "defaultModel": "gpt-5.6-sol"
+}
