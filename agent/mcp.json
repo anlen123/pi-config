@@ -4,7 +4,7 @@
       "type": "http",
       "url": "http://oppocloud-mcp.oppoer.me/mcp-proxy/dataland-mcp/mcp",
       "headers": {
-        "authorization": "O5SfyaLlLtfy8zPobJcbIJRwsSmkBDZUoLwnacXUvS1tHHzFRsUvwNe7Fa+zn1TePBS8lmffFJgH"
+        "authorization": "<DATALAND_MCP_AUTHORIZATION>"
       }
     }
   }

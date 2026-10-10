@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.87.1",
+  "lastChangelogVersion": "1.1.0",
   "theme": "dark",
   "quietStartup": false,
   "packages": [
@@ -13,7 +13,6 @@
       "source": "npm:pi-background-tasks",
       "extensions": []
     },
-    "npm:billion-context",
     "npm:context-mode",
     {
       "source": "npm:pi-goal-x",
@@ -25,9 +24,14 @@
     "npm:@narumitw/pi-btw",
     "../../../usr/lib/node_modules/@jmfederico/pi-web/dist/pi-packages/relays",
     "git:github.com/NVlabs/SoL-Pi",
-    "npm:@narumitw/pi-goal"
+    "npm:@narumitw/pi-goal",
+    "git:github.com/zhaoxuya520/reverse-skill@cab634bd855fc287f6e420c1f36fd1a6b9245960"
   ],
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-6-sol",
-  "hideThinkingBlock": false
+  "defaultModel": "gpt-6.1-sol",
+  "defaultThinkingLevel": "xhigh",
+  "hideThinkingBlock": false,
+  "extensions": [
+    "-builtin:mcp"
+  ]
 }
