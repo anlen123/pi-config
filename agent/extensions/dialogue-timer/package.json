@@ -1,0 +1,11 @@
+{
+  "name": "pi-dialogue-timer-local",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "在 Pi 状态栏以 m:ss 展示每次完整对话的耗时",
+  "keywords": ["pi-package"],
+  "pi": { "extensions": ["./index.ts"] },
+  "peerDependencies": { "@earendil-works/pi-coding-agent": "*" },
+  "scripts": { "test": "node --test test.mjs" }
+}
